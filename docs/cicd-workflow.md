@@ -1,6 +1,6 @@
-# CI/CD Workflow (Conceptual)
+# CI/CD Workflow
 
-> This document defines the intended CI/CD pipeline. No GitHub Actions are currently active in this repo — pipelines are described here for planning and future implementation.
+Three GitHub Actions workflows are active in `.github/workflows/`.
 
 ---
 
@@ -14,193 +14,111 @@ main          ← stable, tagged releases only
         └── docs/<name>      ← documentation only
 ```
 
-### Rules
-
-| Branch | Who pushes | Protected | Requires PR | Tests required |
-|---|---|---|---|---|
-| `main` | CI only (via merge from develop) | Yes | Yes | All pass |
-| `develop` | Developers via PR | Yes | Yes | Unit tests pass |
-| `feature/*` | Developer | No | No | Local |
+| Branch | Protected | Requires PR | Tests required |
+|---|---|---|---|
+| `main` | Yes | Yes | All pass |
+| `develop` | Yes | Yes | Unit tests pass |
+| `feature/*` | No | No | Local |
 
 ---
 
-## Pipeline: Pull Request (feature → develop)
+## Workflow 1 — CI (`ci.yml`)
 
-Runs on every PR targeting `develop`. Must pass before merge.
+Triggers: PR targeting `main` or `develop`, push to `develop`.
 
-```yaml
-# Conceptual — not yet implemented as GitHub Actions
-
-name: PR Checks
-
-on:
-  pull_request:
-    branches: [develop]
-
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - run: pip install ruff
-      - run: ruff check .                    # PEP8 + style
-      - run: ruff format --check .           # Formatting
-
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install mypy types-aiofiles
-      - run: mypy *.py --ignore-missing-imports
-
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install -r requirements.txt pytest pytest-asyncio
-      - run: python -m pytest tests/ -v --tb=short
-      # Note: functional tests excluded — require real API keys
-
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install checkov bandit
-      - run: checkov -d terraform/ --framework terraform --quiet
-      - run: bandit -r *.py -ll              # Python security scan (medium+ severity)
-```
-
----
-
-## Pipeline: Release (develop → main)
-
-Runs when a PR from `develop` to `main` is merged. Tags and deploys.
-
-```yaml
-name: Release
-
-on:
-  push:
-    tags: ["v*.*.*"]
-
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:latest
-
-  deploy-dev:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    environment: dev
-    steps:
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Update Container App image
-        run: |
-          az containerapp update \
-            --name ca-lolnotifier-dev \
-            --resource-group rg-lolnotifier-dev \
-            --image ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-
-  deploy-prod:
-    needs: deploy-dev
-    runs-on: ubuntu-latest
-    environment: prod          # Requires manual approval in GitHub Environments
-    steps:
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Update Container App image
-        run: |
-          az containerapp update \
-            --name ca-lolnotifier-prod \
-            --resource-group rg-lolnotifier-prod \
-            --image ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-```
-
----
-
-## Secrets in CI/CD
-
-| Secret name | Where stored | Used by |
+| Job | Tool | Notes |
 |---|---|---|
-| `AZURE_CREDENTIALS` | GitHub Actions secret | Azure login step |
-| `TELEGRAM_TOKEN` | Azure Key Vault | Container App (via managed identity) |
-| `RIOT_API_KEY` | Azure Key Vault | Container App (via managed identity) |
-| `TF_VAR_telegram_token` | GitHub Actions secret | Terraform apply (initial deploy only) |
+| `lint` | ruff | PEP8 + formatting check |
+| `unit-tests` | pytest + pytest-cov | 78 tests, no API calls, coverage gate ≥ 55% |
+| `security` | bandit + checkov | Python SAST + Terraform IaC scan (soft-fail) |
 
-**Never** store Telegram tokens or Riot API keys as GitHub Actions secrets after initial Key Vault setup — use managed identity from that point on.
+Coverage report uploaded as artifact (`coverage-report`).
+Security reports uploaded as artifact (`security-reports`).
 
 ---
 
-## Functional Tests in CI
+## Workflow 2 — Terraform (`terraform.yml`)
 
-Functional tests (`functional_test_suite.py`) are **excluded from CI** because:
-- They require a live Riot Dev Key (expires every 24h)
-- They depend on real match history (changes constantly)
-- They send real Telegram messages
+Triggers: push/PR to `main` on `terraform/**` changes, or manual dispatch.
 
-Run them manually before tagging a release:
+```
+checkov (IaC scan, soft-fail)
+  └── apply (only on push or workflow_dispatch)
+        ├── terraform init  (remote backend: stlolnotifiertfstate)
+        └── terraform apply -auto-approve
+```
+
+Required GitHub secrets:
+
+| Secret | Used by |
+|---|---|
+| `ARM_CLIENT_ID` | Terraform auth |
+| `ARM_CLIENT_SECRET` | Terraform auth |
+| `ARM_TENANT_ID` | Terraform auth |
+| `ARM_SUBSCRIPTION_ID` | Terraform auth |
+| `TF_VAR_TELEGRAM_TOKEN` | Key Vault secret (initial deploy only) |
+| `TF_VAR_RIOT_API_KEY` | Key Vault secret (initial deploy only) |
+| `TF_VAR_TELEGRAM_CHAT_ID` | Key Vault secret (initial deploy only) |
+
+After initial deploy, secrets live in Key Vault — GitHub secrets are only needed for Terraform to write them on first apply.
+
+---
+
+## Workflow 3 — Release (`release.yml`)
+
+Triggers: push of a `v*.*.*` tag.
+
+```
+build  → Build & push Docker image to ghcr.io
+  └── deploy-dev  → Deploy to Function App (dev), environment: dev
+        └── deploy-prod  → Deploy to Function App (prod), environment: prod
+                           (requires manual approval in GitHub Environments)
+```
+
+Deploy step uses `az functionapp deployment source config-zip` or `az functionapp update` targeting `func-lolnotifier-dev-<suffix>`.
+
+---
+
+## Functional Tests (manual only)
+
+Excluded from CI — require live Riot Dev Key and send real Telegram messages.
 
 ```bash
 python functional_test_suite.py
 # Expected: Passed: 10  Failed: 0  Warn: 2
 ```
 
+Run manually before tagging a release.
+
 ---
 
 ## Release Tagging Process
 
 ```bash
-# 1. Ensure all unit tests pass
+# 1. Ensure unit tests pass
 python -m pytest tests/ -v
 
 # 2. Run functional tests manually
 python functional_test_suite.py
 
-# 3. Update CHANGELOG.md with new version entry
+# 3. Update CHANGELOG.md and pyproject.toml version
 
-# 4. Update version in pyproject.toml
-
-# 5. Commit and tag
 git add CHANGELOG.md pyproject.toml
-git commit -m "chore: release v3.0.0"
-git tag -a v3.0.0 -m "Release v3.0.0 — production-ready, Azure-ready"
+git commit -m "chore: release v3.x.x"
+git tag -a v3.x.x -m "Release v3.x.x"
 git push origin main --tags
 ```
 
 ---
 
-## Monitoring and Alerting
-
-After deployment, configure these Application Insights alerts:
+## Monitoring Alerts (Application Insights)
 
 | Alert | Condition | Severity |
 |---|---|---|
 | Exception spike | >10 exceptions in 5 min | Warning |
-| Container restart | Revision restart detected | Critical |
-| API 429 rate limit | Custom log query: `traces | where message contains "429"` | Warning |
-| Dev Key expiry | Custom log query: `traces | where message contains "401"` | Info |
-
-Query example for Application Insights (KQL):
+| Function restart | Host restart detected | Critical |
+| API 429 rate limit | `traces \| where message contains "429"` | Warning |
+| Dev Key expiry | `traces \| where message contains "401"` | Info |
 
 ```kql
 traces

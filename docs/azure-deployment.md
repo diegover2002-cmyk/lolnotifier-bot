@@ -3,30 +3,37 @@
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Azure Resource Group                         │
-│                  rg-lolnotifier-{env}                           │
-│                                                                 │
-│  ┌──────────────────┐    ┌──────────────────────────────────┐   │
-│  │   Key Vault      │    │     Container App Environment    │   │
-│  │  kv-lolnotifier  │◄───│                                  │   │
-│  │                  │    │  ┌────────────────────────────┐  │   │
-│  │  telegram-token  │    │  │   Container App (bot)      │  │   │
-│  │  riot-api-key    │    │  │   ca-lolnotifier-{env}     │  │   │
-│  │  telegram-chat-id│    │  │                            │  │   │
-│  └──────────────────┘    │  │  Managed Identity ─────────┼──┘   │
-│                          │  │  reads secrets from KV     │      │
-│  ┌──────────────────┐    │  └────────────┬───────────────┘      │
-│  │  Storage Account │    │               │                      │
-│  │  File Share      │◄───┼───────────────┘ /app/data mount      │
-│  │  /lolnotifier.db │    └──────────────────────────────────┘   │
-│  └──────────────────┘                                           │
-│                                                                 │
-│  ┌──────────────────┐                                           │
-│  │ Application      │    Logs, traces, exception alerts         │
-│  │ Insights         │◄── from bot via connection string env var  │
-│  └──────────────────┘                                           │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Azure Resource Group                             │
+│                  rg-lolnotifier-dev                                 │
+│                                                                     │
+│  ┌──────────────────┐    ┌──────────────────────────────────────┐   │
+│  │   Key Vault      │    │   Azure Function App (Python 3.11)   │   │
+│  │  kv-lolnotifier  │◄───│   func-lolnotifier-dev-h4dx          │   │
+│  │  -dev-h4dx       │    │                                      │   │
+│  │  telegram-token  │    │   System-Assigned Managed Identity   │   │
+│  │  riot-api-key    │    │   reads secrets via KV references    │   │
+│  │  telegram-chat-id│    └──────────────┬───────────────────────┘   │
+│  │  cosmosdb-conn   │                   │                           │
+│  └──────────────────┘    ┌──────────────▼───────────────────────┐   │
+│                          │   Logic App Scheduler                │   │
+│  ┌──────────────────┐    │   logic-lolnotifier-scheduler-dev    │   │
+│  │  Storage Account │    │   Triggers /api/poll every 5 min     │   │
+│  │  stlolnotifier   │    │   System-Assigned Managed Identity   │   │
+│  │  devh4dx         │    └──────────────────────────────────────┘   │
+│  │  File Share      │                                               │
+│  └──────────────────┘    ┌──────────────────────────────────────┐   │
+│                          │   CosmosDB (NoSQL / Serverless)      │   │
+│  ┌──────────────────┐    │   cosmos-lolnotifier-dev-h4dx        │   │
+│  │  App Insights    │    │   northeurope                        │   │
+│  │  + Log Analytics │    │   DB: lolnotifier                    │   │
+│  │  log-lolnotifier │    │   Containers: users, match_history,  │   │
+│  │  -dev            │    │   pro_players                        │   │
+│  └──────────────────┘    └──────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
+
+Remote State (separate RG):
+  rg-lolnotifier-tfstate / stlolnotifiertfstate / container: tfstate
 ```
 
 ## Terraform Module Structure
@@ -37,157 +44,137 @@ terraform/
 ├── variables.tf                     # Input variables
 ├── outputs.tf                       # Output values
 ├── modules/
-│   ├── container_app/               # Azure Container App (bot runtime)
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── keyvault/                    # Azure Key Vault (secrets)
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── storage/                     # Azure Storage (SQLite persistence)
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └── monitoring/                  # Application Insights + alerts
-│       ├── main.tf
-│       ├── variables.tf
-│       └── outputs.tf
-└── environments/
-    ├── dev/
-    │   ├── main.tf
-    │   └── terraform.tfvars.example
-    └── prod/
-        └── main.tf                  # Has remote backend configured
+│   ├── keyvault/                    # Azure Key Vault + secrets + diagnostic settings
+│   ├── cosmosdb/                    # CosmosDB account + database + 3 containers
+│   ├── storage/                     # Storage Account + File Share
+│   ├── function_app/                # Function App + Service Plan + KV role assignment
+│   ├── monitoring/                  # Log Analytics Workspace + App Insights + alerts
+│   └── scheduler/                   # Logic App + recurrence trigger + HTTP action
+└── scripts/
+    └── bootstrap-backend.ps1        # One-time tfstate storage creation
 ```
 
 ---
 
 ## Prerequisites
 
-1. Azure CLI installed and logged in: `az login`
-2. Terraform >= 1.6 installed
-3. An Azure subscription with Contributor access
-4. Docker image built and pushed to a registry (GitHub Container Registry or Azure Container Registry)
+1. Azure CLI installed: `az login`
+2. Terraform >= 1.6
+3. GitHub repository with secrets configured (see below)
+4. Bootstrap script run once: `.\terraform\scripts\bootstrap-backend.ps1`
 
 ---
 
-## Step-by-Step Deployment
+## GitHub Secrets Required
 
-### 1. Build and push the Docker image
+| Secret | Description |
+|---|---|
+| `ARM_CLIENT_ID` | Service Principal client ID |
+| `ARM_CLIENT_SECRET` | Service Principal client secret |
+| `ARM_TENANT_ID` | Azure AD tenant ID |
+| `ARM_SUBSCRIPTION_ID` | Azure subscription ID |
+| `TF_VAR_TELEGRAM_TOKEN` | Telegram Bot API token (initial deploy only) |
+| `TF_VAR_RIOT_API_KEY` | Riot Games Dev API key (initial deploy only) |
+| `TF_VAR_TELEGRAM_CHAT_ID` | Telegram chat ID for notifications |
 
-```bash
-# From lolnotifier/ directory
-docker build -t ghcr.io/<your-github-user>/lolnotifier-bot:v3.0.0 .
-docker push ghcr.io/<your-github-user>/lolnotifier-bot:v3.0.0
-```
+After initial deploy, secrets live in Key Vault. The Function App reads them via
+`@Microsoft.KeyVault(SecretUri=...)` references — GitHub secrets are only needed
+for Terraform to write them to Key Vault on first apply.
 
-### 2. Create Terraform state storage (one-time, manual)
+---
 
-```bash
-az group create --name rg-lolnotifier-tfstate --location westeurope
+## Deployment (Automated via GitHub Actions)
 
-az storage account create \
-  --name stlolnotifiertfstate \
-  --resource-group rg-lolnotifier-tfstate \
-  --sku Standard_LRS \
-  --min-tls-version TLS1_2
+Every push to `main` triggers `.github/workflows/terraform.yml`:
 
-az storage container create \
-  --name tfstate \
-  --account-name stlolnotifiertfstate
-```
+1. Checkov IaC scan (soft fail — warnings only)
+2. `terraform init` with remote backend config
+3. `terraform apply -auto-approve`
 
-### 3. Set secrets as environment variables (never in tfvars)
+No manual steps needed after initial bootstrap.
 
-```bash
-export TF_VAR_telegram_token="<your_telegram_token>"
-export TF_VAR_riot_api_key="<your_riot_api_key>"
-export TF_VAR_telegram_chat_id="<your_chat_id>"
-```
+---
 
-### 4. Deploy dev environment
+## Manual Deployment (Local)
 
 ```bash
-cd terraform/environments/dev
-terraform init
-terraform plan -out=tfplan
-terraform apply tfplan
-```
+cd terraform
 
-### 5. Verify deployment
+# Set credentials
+export ARM_CLIENT_ID="<sp_client_id>"
+export ARM_CLIENT_SECRET="<sp_client_secret>"
+export ARM_TENANT_ID="<tenant_id>"
+export ARM_SUBSCRIPTION_ID="<subscription_id>"
 
-```bash
-# Check Container App is running
-az containerapp show \
-  --name ca-lolnotifier-dev \
-  --resource-group rg-lolnotifier-dev \
-  --query "properties.latestRevisionFqdn"
+# Set secret values (initial deploy only)
+export TF_VAR_telegram_token="<token>"
+export TF_VAR_riot_api_key="<key>"
+export TF_VAR_telegram_chat_id="<chat_id>"
 
-# Tail logs
-az containerapp logs show \
-  --name ca-lolnotifier-dev \
-  --resource-group rg-lolnotifier-dev \
-  --follow
+terraform init \
+  -backend-config="resource_group_name=rg-lolnotifier-tfstate" \
+  -backend-config="storage_account_name=stlolnotifiertfstate" \
+  -backend-config="container_name=tfstate" \
+  -backend-config="key=lolnotifier.tfstate"
+
+terraform apply
 ```
 
 ---
 
 ## Secret Rotation
 
-Secrets are stored in Key Vault with `lifecycle { ignore_changes = [value] }` — Terraform will not overwrite them after initial creation. To rotate:
+Secrets use `lifecycle { ignore_changes = [value] }` — Terraform won't overwrite
+them after initial creation. To rotate the Riot Dev Key (expires every 24h):
 
 ```bash
 az keyvault secret set \
-  --vault-name kv-lolnotifier-prod \
+  --vault-name kv-lolnotifier-dev-h4dx \
   --name riot-api-key \
   --value "<new_key>"
 ```
 
-The Container App picks up the new value on next restart (or trigger a revision):
-
-```bash
-az containerapp revision restart \
-  --name ca-lolnotifier-prod \
-  --resource-group rg-lolnotifier-prod \
-  --revision <revision-name>
-```
+The Function App picks up the new value automatically on next execution
+(Key Vault references are resolved at runtime).
 
 ---
 
-## Security Checklist (Checkov)
+## MCSB Security Posture
 
-Run Checkov against the Terraform modules before applying:
-
-```bash
-pip install checkov
-checkov -d terraform/ --framework terraform
-```
-
-Key checks that should pass:
-- `CKV_AZURE_42` — Key Vault soft delete enabled ✅
-- `CKV_AZURE_109` — Key Vault purge protection enabled ✅
-- `CKV_AZURE_33` — Storage account uses HTTPS only ✅
-- `CKV_AZURE_3` — Storage account minimum TLS 1.2 ✅
-- `CKV_AZURE_190` — Container App uses managed identity ✅
-
----
-
-## Cost Estimate (Dev Key usage)
-
-| Resource | SKU | Estimated monthly cost |
+| Control | Status | Notes |
 |---|---|---|
-| Container App | 0.25 vCPU / 0.5 GB | ~$5–10 |
-| Key Vault | Standard | ~$0.03/10k ops |
-| Storage Account | Standard LRS, 1 GB | ~$0.02 |
-| Application Insights | Pay-per-use, 30d retention | ~$0–2 |
-| **Total** | | **~$7–15/month** |
+| Key Vault soft delete | ✅ | 7 days (immutable after creation) |
+| Key Vault purge protection | ✅ | Enabled |
+| Key Vault RBAC | ✅ | `enableRbacAuthorization: true` |
+| Key Vault network ACLs | ✅ | `defaultAction: Deny` |
+| Key Vault audit logs | ✅ | Diagnostic settings → Log Analytics |
+| Secret expiration dates | ✅ | Set on all secrets |
+| Storage HTTPS only | ✅ | |
+| Storage TLS 1.2 | ✅ | |
+| Storage network rules | ✅ | `defaultAction: Deny` + `bypass: AzureServices` |
+| Function App HTTPS | ✅ | |
+| Function App Managed Identity | ✅ | System Assigned |
+| Function App secrets via KV refs | ✅ | No plaintext secrets in app settings |
+| CosmosDB encryption at rest | ✅ | Default AES-256 |
+| CosmosDB metadata write protection | ✅ | `access_key_metadata_writes_enabled: false` |
+| CosmosDB diagnostic logs | ✅ | DataPlaneRequests + QueryRuntimeStatistics |
+| Logic App Managed Identity | ✅ | System Assigned |
+| Logic App diagnostic logs | ✅ | WorkflowRuntime |
+| Log Analytics retention | ✅ | 90 days |
+| App Insights retention | ✅ | 90 days |
+| SP least privilege | ✅ | `User Access Administrator` scoped to RG only |
+| tfstate TLS 1.2 | ✅ | |
 
 ---
 
-## Dev Key Considerations on Azure
+## Cost Estimate (Dev environment)
 
-- Dev Key expires every 24 hours — the bot handles 401 gracefully (returns `None`, no crash)
-- To renew: update the Key Vault secret `riot-api-key` and restart the Container App revision
-- `POLL_INTERVAL=300` (5 min) keeps well within Dev Key rate limits even on Azure
-- Single Container App replica (`max_replicas = 1`) prevents duplicate notifications from concurrent instances
+| Resource | SKU | Est. monthly cost |
+|---|---|---|
+| Function App | Y1 Consumption | ~$0–5 |
+| CosmosDB | Serverless | ~$0–2 |
+| Key Vault | Standard | ~$0.03/10k ops |
+| Storage Account | Standard LRS | ~$0.02 |
+| Log Analytics | PerGB2018 | ~$0–3 |
+| Logic App | Consumption | ~$0 (free tier) |
+| **Total** | | **~$2–10/month** |

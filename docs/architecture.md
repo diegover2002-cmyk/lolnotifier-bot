@@ -30,7 +30,8 @@
 
      ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
      │  database.py │    │   stats.py   │    │ formatter.py │
-     │  (aiosqlite) │    │  (pure math) │    │ (pure text)  │
+     │  (SQLite /   │    │  (pure math) │    │ (pure text)  │
+     │  CosmosDB)   │    │              │    │              │
      └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
@@ -136,7 +137,7 @@ player_stats(update, context)
 | `poller.py` | ✅ | ❌ | Background polling loop |
 | `riot_api.py` | ✅ | ❌ | HTTP client for Riot API |
 | `riot_account.py` | ✅ | ❌ | account/v1 resolution |
-| `database.py` | ✅ | ❌ | SQLite read/write |
+| `database.py` | ✅ | ❌ | SQLite (local) / CosmosDB (Azure) read/write |
 | `stats.py` | ❌ | ✅ | Math over match data |
 | `formatter.py` | ❌ | ✅ | String formatting |
 | `pro_players.py` | ❌ | ✅ | Static dataset |

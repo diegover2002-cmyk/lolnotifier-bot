@@ -124,6 +124,7 @@ module "storage" {
   environment         = var.environment
   suffix              = random_string.suffix.result
   tags                = local.common_tags
+  allowed_ip_rules    = var.allowed_ip_rules
 }
 
 module "monitoring" {
