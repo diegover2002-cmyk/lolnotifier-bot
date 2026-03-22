@@ -134,4 +134,5 @@ jobs:
           TF_VAR_riot_api_key: ${{ secrets.TF_VAR_RIOT_API_KEY }}
           TF_VAR_telegram_chat_id: ${{ secrets.TF_VAR_TELEGRAM_CHAT_ID }}
           TF_VAR_subscription_id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ secrets.ARM_TENANT_ID }}
         run: cd terraform && terraform apply -input=false -auto-approve
