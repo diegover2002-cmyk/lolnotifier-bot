@@ -1,0 +1,163 @@
+# .github/workflows/terraform-pr.yml
+#
+# Runs on every Pull Request that touches terraform/ or this workflow file.
+# Jobs: fmt check → validate → checkov scan → terraform plan (no apply)
+#
+# This workflow is READ-ONLY — it never modifies Azure resources.
+# terraform apply only runs via terraform.yml on push to main.
+#
+# Required GitHub secrets:
+#   ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID
+#   TF_VAR_TELEGRAM_TOKEN, TF_VAR_RIOT_API_KEY, TF_VAR_TELEGRAM_CHAT_ID
+
+name: Terraform PR
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-pr.yml"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+
+  # ── 1. Format check ──────────────────────────────────────────────────────────
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive terraform/
+
+  # ── 2. Validate ──────────────────────────────────────────────────────────────
+  validate:
+    name: terraform validate
+    runs-on: ubuntu-latest
+    needs: fmt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform Init (local backend for validation)
+        run: |
+          cd terraform
+          terraform init -backend=false
+
+      - name: Terraform Validate
+        run: cd terraform && terraform validate
+
+  # ── 3. Checkov IaC security scan ─────────────────────────────────────────────
+  checkov:
+    name: Checkov scan
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          soft_fail: true
+          output_format: cli
+          download_external_modules: false
+
+      - name: Upload Checkov SARIF
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkov-results
+          path: results_tf.sarif
+
+  # ── 4. Terraform Plan (read-only, posts diff to PR) ──────────────────────────
+  plan:
+    name: terraform plan
+    runs-on: ubuntu-latest
+    needs: checkov
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.6"
+
+      - name: Terraform Init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+        run: |
+          cd terraform && terraform init -input=false \
+            -backend-config="resource_group_name=rg-lolnotifier-tfstate" \
+            -backend-config="storage_account_name=stlolnotifiertfstate" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=lolnotifier.tfstate" \
+            -backend-config="subscription_id=$ARM_SUBSCRIPTION_ID" \
+            -backend-config="tenant_id=$ARM_TENANT_ID" \
+            -backend-config="client_id=$ARM_CLIENT_ID" \
+            -backend-config="client_secret=$ARM_CLIENT_SECRET"
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_telegram_token: ${{ secrets.TF_VAR_TELEGRAM_TOKEN }}
+          TF_VAR_riot_api_key: ${{ secrets.TF_VAR_RIOT_API_KEY }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TF_VAR_TELEGRAM_CHAT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ secrets.ARM_TENANT_ID }}
+        run: |
+          cd terraform
+          terraform plan -input=false -no-color -out=tfplan 2>&1 | tee plan_output.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/plan_output.txt', 'utf8');
+            const maxLen = 65000;
+            const truncated = plan.length > maxLen
+              ? plan.substring(0, maxLen) + '\n\n... (truncated)'
+              : plan;
+            const body = `## Terraform Plan\n\n<details><summary>Show Plan</summary>\n\n\`\`\`hcl\n${truncated}\n\`\`\`\n\n</details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: terraform-plan
+          path: terraform/plan_output.txt

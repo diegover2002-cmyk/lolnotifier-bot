@@ -1,13 +1,11 @@
 # .github/workflows/ci.yml
 #
-# Runs on every pull request targeting main or develop.
-# All jobs are NON-BLOCKING for the repo — they report status but
-# branch protection rules are NOT enforced until explicitly configured.
+# Runs on every pull request targeting main or develop, and on push to develop.
 #
 # Jobs:
 #   lint        → ruff (PEP8 + style)
 #   unit-tests  → pytest with coverage report (no API keys needed)
-#   security    → bandit (Python SAST) + checkov (Terraform IaC)
+#   security    → bandit (Python SAST) + checkov (Terraform IaC) + terraform fmt
 
 name: CI
 
