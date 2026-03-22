@@ -5,4 +5,7 @@ variable "location"            { type = string }
 variable "environment"         { type = string }
 variable "suffix"              { type = string }
 variable "tags"                { type = map(string) }
-variable "allowed_ip_rules"    { type = list(string); default = [] }
+variable "allowed_ip_rules" {
+  type    = list(string)
+  default = []
+}
