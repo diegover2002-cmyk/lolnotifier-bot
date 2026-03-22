@@ -43,12 +43,7 @@ terraform {
   # Remote state — Azure Blob Storage.
   # Storage account is created by bootstrap-backend.sh before first terraform init.
   # Values are read from backend.conf (excluded by .gitignore).
-  backend "azurerm" {
-    resource_group_name  = "rg-lolnotifier-tfstate"
-    storage_account_name = "stlolnotifiertfstate"
-    container_name       = "tfstate"
-    key                  = "lolnotifier.tfstate"
-  }
+  backend "azurerm" {}
 }
 
 # -----------------------------------------------------------------------------
