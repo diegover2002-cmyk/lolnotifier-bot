@@ -17,11 +17,9 @@ resource "azurerm_storage_account" "main" {
   https_traffic_only_enabled      = true
   shared_access_key_enabled       = true  # Required by Function App runtime
 
-  network_rules {
-    default_action = "Deny"
-    bypass         = ["AzureServices"]
-    ip_rules       = var.allowed_ip_rules
-  }
+  # No network_rules block — storage is protected by HTTPS-only + access key
+  # (stored in Key Vault). A Deny firewall blocks Terraform data-plane calls
+  # (azurerm_storage_share) from CI runners and is not needed here.
 
   blob_properties {
     delete_retention_policy {

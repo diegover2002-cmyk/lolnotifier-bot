@@ -90,14 +90,6 @@ variable "function_app_sku" {
   }
 }
 
-# ── Network ───────────────────────────────────────────────────────────────────
-
-variable "allowed_ip_rules" {
-  description = "IP addresses allowed through the storage account firewall (e.g. CI runner IP)."
-  type        = list(string)
-  default     = []
-}
-
 # ── CosmosDB ──────────────────────────────────────────────────────────────────
 
 variable "cosmosdb_throughput" {
