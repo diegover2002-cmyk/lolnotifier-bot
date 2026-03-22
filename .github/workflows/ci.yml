@@ -279,7 +279,7 @@ jobs:
 
     steps:
       - name: Post summary comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           TRUFFLEHOG_STATUS: ${{ needs.trufflehog.outputs.status }}
           TRUFFLEHOG_DETAIL: ${{ needs.trufflehog.outputs.detail }}
