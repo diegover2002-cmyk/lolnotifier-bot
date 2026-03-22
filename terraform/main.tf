@@ -98,13 +98,12 @@ module "keyvault" {
   environment         = var.environment
   suffix              = random_string.suffix.result
   tags                = local.common_tags
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
 
-  # Sensitive — passed via TF_VAR_* env vars, never in tfvars files
   telegram_token   = var.telegram_token
   riot_api_key     = var.riot_api_key
   telegram_chat_id = var.telegram_chat_id
 
-  # CosmosDB connection string — available after cosmosdb module is applied
   cosmosdb_connection_string = module.cosmosdb.primary_connection_string
 }
 
@@ -115,6 +114,7 @@ module "cosmosdb" {
   environment         = var.environment
   suffix              = random_string.suffix.result
   tags                = local.common_tags
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
 }
 
 module "storage" {
@@ -164,8 +164,8 @@ module "scheduler" {
   location            = var.location
   environment         = var.environment
   tags                = local.common_tags
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
 
-  # The scheduler triggers the Function App polling endpoint
   function_app_id       = module.function_app.function_app_id
   function_app_hostname = module.function_app.default_hostname
 }

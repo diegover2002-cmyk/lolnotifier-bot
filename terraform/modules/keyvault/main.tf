@@ -25,12 +25,12 @@ resource "azurerm_key_vault" "main" {
   tenant_id           = data.azurerm_client_config.current.tenant_id
   sku_name            = "standard"
 
-  soft_delete_retention_days = 7
+  soft_delete_retention_days = 90
   purge_protection_enabled   = true
   enable_rbac_authorization  = true
 
   network_acls {
-    default_action = "Allow"  # Tighten to "Deny" + ip_rules when VNet is configured
+    default_action = "Deny"
     bypass         = "AzureServices"
   }
 
@@ -52,51 +52,74 @@ resource "azurerm_role_assignment" "deployer_secrets_officer" {
 #   - To force a new value via Terraform: terraform taint <resource>
 
 resource "azurerm_key_vault_secret" "telegram_token" {
-  name         = "telegram-token"
-  value        = var.telegram_token
-  key_vault_id = azurerm_key_vault.main.id
-  content_type = "text/plain"
+  name            = "telegram-token"
+  value           = var.telegram_token
+  key_vault_id    = azurerm_key_vault.main.id
+  content_type    = "text/plain"
+  expiration_date = timeadd(timestamp(), "8760h") # 1 year
 
   lifecycle {
-    ignore_changes = [value]
+    ignore_changes = [value, expiration_date]
   }
 
   depends_on = [azurerm_role_assignment.deployer_secrets_officer]
 }
 
 resource "azurerm_key_vault_secret" "riot_api_key" {
-  name         = "riot-api-key"
-  value        = var.riot_api_key
-  key_vault_id = azurerm_key_vault.main.id
-  content_type = "text/plain"
+  name            = "riot-api-key"
+  value           = var.riot_api_key
+  key_vault_id    = azurerm_key_vault.main.id
+  content_type    = "text/plain"
+  expiration_date = timeadd(timestamp(), "24h") # Dev Key expires every 24h
 
-  # Dev Key expires every 24h — rotate with:
-  # az keyvault secret set --vault-name <vault> --name riot-api-key --value <new_key>
   lifecycle {
-    ignore_changes = [value]
+    ignore_changes = [value, expiration_date]
   }
 
   depends_on = [azurerm_role_assignment.deployer_secrets_officer]
 }
 
 resource "azurerm_key_vault_secret" "telegram_chat_id" {
-  name         = "telegram-chat-id"
-  value        = var.telegram_chat_id
-  key_vault_id = azurerm_key_vault.main.id
-  content_type = "text/plain"
+  name            = "telegram-chat-id"
+  value           = var.telegram_chat_id
+  key_vault_id    = azurerm_key_vault.main.id
+  content_type    = "text/plain"
+  expiration_date = timeadd(timestamp(), "8760h")
+
+  lifecycle {
+    ignore_changes = [value, expiration_date]
+  }
 
   depends_on = [azurerm_role_assignment.deployer_secrets_officer]
 }
 
 resource "azurerm_key_vault_secret" "cosmosdb_connection" {
-  name         = "cosmosdb-connection"
-  value        = var.cosmosdb_connection_string
-  key_vault_id = azurerm_key_vault.main.id
-  content_type = "text/plain"
+  name            = "cosmosdb-connection"
+  value           = var.cosmosdb_connection_string
+  key_vault_id    = azurerm_key_vault.main.id
+  content_type    = "text/plain"
+  expiration_date = timeadd(timestamp(), "8760h")
 
   lifecycle {
-    ignore_changes = [value]
+    ignore_changes = [value, expiration_date]
   }
 
   depends_on = [azurerm_role_assignment.deployer_secrets_officer]
+}
+
+# ── Diagnostic settings — audit all KV access ─────────────────────────────────
+
+resource "azurerm_monitor_diagnostic_setting" "keyvault" {
+  name                       = "diag-kv-lolnotifier-${var.environment}"
+  target_resource_id         = azurerm_key_vault.main.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
+
+  enabled_log {
+    category = "AuditEvent"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
 }

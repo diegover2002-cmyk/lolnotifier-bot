@@ -22,30 +22,48 @@ resource "azurerm_cosmosdb_account" "main" {
   location            = var.location
   resource_group_name = var.resource_group_name
   offer_type          = "Standard"
-  kind                = "GlobalDocumentDB"  # Core (NoSQL) API
+  kind                = "GlobalDocumentDB"
 
-  # Consistency: Session is the right balance for a single-bot workload
   consistency_policy {
     consistency_level = "Session"
   }
 
-  # Single-region for dev/prod (add failover_priority = 1 region for HA)
   geo_location {
     location          = "northeurope"
     failover_priority = 0
   }
 
-  # Security hardening
-  is_virtual_network_filter_enabled = false  # Set true when VNet integration is added
-  public_network_access_enabled     = true   # Set false when using Private Endpoint
-  local_authentication_disabled     = false  # Keep enabled — managed identity auth used in app
+  is_virtual_network_filter_enabled       = false
+  public_network_access_enabled           = true
+  local_authentication_disabled           = false
+  access_key_metadata_writes_enabled      = false
 
-  # Serverless capacity mode — pay only for RU consumed, ideal for low-traffic bots
   capabilities {
     name = "EnableServerless"
   }
 
   tags = var.tags
+}
+
+# ── Diagnostic settings ──────────────────────────────────────────────────────────
+
+resource "azurerm_monitor_diagnostic_setting" "cosmosdb" {
+  name                       = "diag-cosmos-lolnotifier-${var.environment}"
+  target_resource_id         = azurerm_cosmosdb_account.main.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
+
+  enabled_log {
+    category = "DataPlaneRequests"
+  }
+
+  enabled_log {
+    category = "QueryRuntimeStatistics"
+  }
+
+  metric {
+    category = "Requests"
+    enabled  = true
+  }
 }
 
 # ── Database ──────────────────────────────────────────────────────────────────

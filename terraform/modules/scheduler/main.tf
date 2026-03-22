@@ -25,6 +25,28 @@ resource "azurerm_logic_app_workflow" "scheduler" {
   location            = var.location
   resource_group_name = var.resource_group_name
   tags                = var.tags
+
+  # MCSB: Managed Identity for outbound calls
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+# ── Diagnostic settings ──────────────────────────────────────────────────────────
+
+resource "azurerm_monitor_diagnostic_setting" "scheduler" {
+  name                       = "diag-logic-lolnotifier-${var.environment}"
+  target_resource_id         = azurerm_logic_app_workflow.scheduler.id
+  log_analytics_workspace_id = var.log_analytics_workspace_id
+
+  enabled_log {
+    category = "WorkflowRuntime"
+  }
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
 }
 
 # ── Recurrence trigger ────────────────────────────────────────────────────────

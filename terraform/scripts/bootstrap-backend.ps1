@@ -54,6 +54,8 @@ az storage account create `
     --min-tls-version TLS1_2 `
     --https-only true `
     --allow-blob-public-access false `
+    --default-action Deny `
+    --bypass AzureServices `
     --output none
 
 # 3. Enable blob versioning

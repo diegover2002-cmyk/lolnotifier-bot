@@ -6,16 +6,21 @@
 # For multi-instance or high-throughput, migrate to Azure SQL or Cosmos DB.
 
 resource "azurerm_storage_account" "main" {
-  name                     = "stlolnotifier${var.environment}${var.suffix}"  # globally unique, lowercase, max 24 chars
+  name                     = "stlolnotifier${var.environment}${var.suffix}"
   resource_group_name      = var.resource_group_name
   location                 = var.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  # Security hardening
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
   https_traffic_only_enabled      = true
+  shared_access_key_enabled       = true  # Required by Function App runtime
+
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
 
   blob_properties {
     delete_retention_policy {

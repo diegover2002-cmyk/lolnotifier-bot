@@ -5,6 +5,7 @@ variable "location"            { type = string }
 variable "environment"         { type = string }
 variable "suffix"              { type = string }
 variable "tags"                { type = map(string) }
+variable "log_analytics_workspace_id" { type = string }
 
 variable "telegram_token" {
   type      = string
