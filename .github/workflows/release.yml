@@ -93,10 +93,7 @@ jobs:
 
       - uses: azure/login@v3
         with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","tenantId":"${{ secrets.ARM_TENANT_ID }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}"}'
 
       - name: Deploy to Function App (dev)
         uses: azure/functions-action@v1
@@ -119,10 +116,7 @@ jobs:
 
       - uses: azure/login@v3
         with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","tenantId":"${{ secrets.ARM_TENANT_ID }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}"}'
 
       - name: Deploy to Function App (prod)
         uses: azure/functions-action@v1
