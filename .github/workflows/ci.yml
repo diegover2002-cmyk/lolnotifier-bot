@@ -30,7 +30,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # full history needed for diff scan
 
@@ -64,7 +64,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v5
         with:
@@ -112,7 +112,7 @@ jobs:
       coverage: ${{ steps.result.outputs.coverage }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v5
         with:
@@ -191,7 +191,7 @@ jobs:
       checkov_detail: ${{ steps.result.outputs.checkov_detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v5
         with:

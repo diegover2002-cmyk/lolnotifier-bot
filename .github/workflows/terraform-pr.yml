@@ -32,7 +32,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -70,7 +70,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -111,7 +111,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run tfsec
         id: tfsec
@@ -144,7 +144,7 @@ jobs:
       detail: ${{ steps.result.outputs.detail }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install checkov
         run: pip install checkov
@@ -202,7 +202,7 @@ jobs:
       destroy: ${{ steps.summary.outputs.destroy }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: hashicorp/setup-terraform@v3
         with:
