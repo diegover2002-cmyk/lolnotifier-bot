@@ -3,6 +3,7 @@ Telegram message formatter.
 Produces clean, emoji-rich messages from Riot API data.
 All functions are pure (no I/O).
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,7 +20,7 @@ QUEUE_LABELS: dict[int, str] = {
     1020: "One for All",
     1300: "Nexus Blitz",
     1400: "Ultimate Spellbook",
-    0:   "Custom",
+    0: "Custom",
 }
 
 ROLE_EMOJI: dict[str, str] = {
@@ -117,12 +118,7 @@ def format_new_match_detected(
 ) -> str:
     """Notification that a new completed match was detected."""
     header = f"🌟 PRO · {pro_team}" if pro_team else "🎮 Nueva partida"
-    return (
-        f"{header}\n"
-        f"👤 {player_name}\n"
-        f"📋 Partida detectada: {match_id}\n"
-        f"⏳ Procesando resultados..."
-    )
+    return f"{header}\n👤 {player_name}\n📋 Partida detectada: {match_id}\n⏳ Procesando resultados..."
 
 
 def format_pro_list(pros: list[dict[str, Any]]) -> str:
@@ -178,8 +174,7 @@ def format_aggregated_stats(
         f"{header} {role_e}",
         f"👤 {player_name}",
         "",
-        f"🎮 Partidas: {agg.get('games', 0)}  "
-        f"({agg.get('wins', 0)}V / {agg.get('losses', 0)}D)",
+        f"🎮 Partidas: {agg.get('games', 0)}  ({agg.get('wins', 0)}V / {agg.get('losses', 0)}D)",
         f"{wr_emoji} Winrate: {wr}%",
         f"⚔️  KDA medio: {agg.get('avg_kills', 0)}/{agg.get('avg_deaths', 0)}/{agg.get('avg_assists', 0)}"
         f"  (ratio {agg.get('avg_kda_ratio', 0)})",

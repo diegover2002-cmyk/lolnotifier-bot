@@ -2,6 +2,7 @@
 Unit tests for handlers.py.
 Telegram Update/Context objects are mocked — no real bot connection needed.
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -22,6 +23,7 @@ def _make_context(*args: str) -> MagicMock:
 
 
 # ── /set_summoner ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_set_summoner_missing_args():
@@ -62,8 +64,10 @@ async def test_set_summoner_success():
 
     fake_account = {"puuid": "abc-puuid-123", "gameName": "Caps", "tagLine": "EUW"}
 
-    with patch("handlers._resolve_account", new_callable=AsyncMock, return_value=fake_account), \
-         patch("handlers.set_user_summoner", new_callable=AsyncMock):
+    with (
+        patch("handlers._resolve_account", new_callable=AsyncMock, return_value=fake_account),
+        patch("handlers.set_user_summoner", new_callable=AsyncMock),
+    ):
         await set_summoner(update, ctx)
 
     calls = [c[0][0] for c in update.message.reply_text.call_args_list]
@@ -71,6 +75,7 @@ async def test_set_summoner_success():
 
 
 # ── /status ───────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_status_no_user():
@@ -110,6 +115,7 @@ async def test_status_with_user():
 
 # ── /toggle ───────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_toggle_no_user():
     update = _make_update()
@@ -129,8 +135,10 @@ async def test_toggle_disables_notifications():
 
     fake_user = {"user_id": 123, "notifications_enabled": True}
 
-    with patch("handlers.get_user", new_callable=AsyncMock, return_value=fake_user), \
-         patch("handlers.toggle_notifications", new_callable=AsyncMock) as mock_toggle:
+    with (
+        patch("handlers.get_user", new_callable=AsyncMock, return_value=fake_user),
+        patch("handlers.toggle_notifications", new_callable=AsyncMock) as mock_toggle,
+    ):
         await toggle_notifs(update, ctx)
 
     # Should have been called with enabled=False (toggled off)
@@ -139,6 +147,7 @@ async def test_toggle_disables_notifications():
 
 
 # ── /list_pros ────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_list_pros_empty():

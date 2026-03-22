@@ -8,12 +8,14 @@ Available from match/v5 (dev key compatible):
   totalDamageDealtToChampions, visionScore, totalHealsOnTeammates,
   turretKills, firstBloodKill, doubleKills, tripleKills, quadraKills, pentaKills
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 
 # ── Per-match extraction ──────────────────────────────────────────────────────
+
 
 def extract_participant(match_info: dict[str, Any], puuid: str) -> dict[str, Any] | None:
     """Return the full participant dict for a given PUUID from a match/v5 payload."""
@@ -69,6 +71,7 @@ def extract_match_stats(match_info: dict[str, Any], puuid: str) -> dict[str, Any
 
 # ── Aggregation ───────────────────────────────────────────────────────────────
 
+
 def aggregate_stats(match_stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     """
     Compute aggregated stats from a list of extract_match_stats() results.
@@ -115,10 +118,7 @@ def aggregate_stats(match_stats_list: list[dict[str, Any]]) -> dict[str, Any]:
     # Formula: winrate*40 + avg_kda*20 + avg_cs_per_min*5 + avg_vision*2 (max ~100)
     winrate = round(wins / n * 100, 1)
     perf = round(
-        (winrate * 0.40)
-        + (min(avg_kda, 10) * 2.0)
-        + (min(avg_cs_per_min, 10) * 0.5)
-        + (min(avg("vision"), 50) * 0.2),
+        (winrate * 0.40) + (min(avg_kda, 10) * 2.0) + (min(avg_cs_per_min, 10) * 0.5) + (min(avg("vision"), 50) * 0.2),
         1,
     )
 
@@ -147,6 +147,7 @@ def aggregate_stats(match_stats_list: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 # ── Dataset ranking ───────────────────────────────────────────────────────────
+
 
 def rank_players(
     player_stats: list[tuple[str, dict[str, Any]]],

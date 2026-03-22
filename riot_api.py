@@ -8,6 +8,7 @@ Available endpoints:
 Blocked on Dev Key (403):
   summoner/v4, league/v4, spectator/v5, champion-mastery/v4  ⚠️
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -39,6 +40,7 @@ _summoner_cache: dict[str, tuple[Any, datetime]] = {}
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 async def _rate_delay() -> None:
     """Enforce per-request delay to stay within rate limits."""
     await asyncio.sleep(RATE_LIMIT_DELAY)
@@ -54,6 +56,7 @@ def _riot_headers() -> dict[str, str]:
 
 
 # ── Summoner (Dev Key: 403 on most regions, kept for prod-key readiness) ──────
+
 
 @retry(
     stop=stop_after_attempt(5),
@@ -116,6 +119,7 @@ async def get_summoner(
 
 # ── Match history (Dev Key compatible) ───────────────────────────────────────
 
+
 async def get_match_history_ids(
     session: aiohttp.ClientSession,
     region: str,
@@ -138,10 +142,7 @@ async def get_match_history_ids(
         List of match ID strings, empty list on error or no matches.
     """
     cluster = ACCOUNT_CLUSTERS.get(region, "europe")
-    url = (
-        f"https://{cluster}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
-        f"?start={start}&count={count}"
-    )
+    url = f"https://{cluster}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}"
     async with _rate_semaphore:
         async with session.get(url, headers=_riot_headers(), timeout=aiohttp.ClientTimeout(total=20)) as resp:
             await _rate_delay()
@@ -156,6 +157,7 @@ async def get_match_history_ids(
 
 
 # ── Match detail (Dev Key compatible) ────────────────────────────────────────
+
 
 @retry(
     stop=stop_after_attempt(3),
@@ -193,6 +195,7 @@ async def get_match_info(
 
 
 # ── Match parsing ─────────────────────────────────────────────────────────────
+
 
 def parse_match_for_puuid(
     match_info: dict[str, Any],

@@ -6,6 +6,7 @@ account/v1 endpoint, which is available on all key tiers.
 
 URL-encodes game names to handle accented characters (e.g. LaBísica).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -46,8 +47,7 @@ async def get_account_by_riot_id(
             triggering tenacity retry up to 3 attempts.
     """
     url = (
-        f"https://{cluster}.api.riotgames.com"
-        f"/riot/account/v1/accounts/by-riot-id/{quote(game_name)}/{quote(tag_line)}"
+        f"https://{cluster}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{quote(game_name)}/{quote(tag_line)}"
     )
     headers = {"X-Riot-Token": RIOT_API_KEY or ""}
     try:

@@ -3,6 +3,7 @@ Logging configuration.
 Uses stdlib logging (consistent with all other modules).
 Call setup_logging() once at startup in main.py.
 """
+
 from __future__ import annotations
 
 import logging

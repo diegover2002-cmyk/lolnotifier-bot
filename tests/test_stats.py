@@ -2,34 +2,52 @@
 Unit tests for stats.py.
 All functions are pure (no I/O) so no mocks are needed.
 """
+
 from stats import extract_match_stats, extract_participant, aggregate_stats, rank_players
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
-def _make_match(puuid: str, kills: int, deaths: int, assists: int, win: bool,
-                cs: int = 150, gold: int = 12000, damage: int = 20000,
-                vision: int = 25, duration: int = 1800) -> dict:
+
+def _make_match(
+    puuid: str,
+    kills: int,
+    deaths: int,
+    assists: int,
+    win: bool,
+    cs: int = 150,
+    gold: int = 12000,
+    damage: int = 20000,
+    vision: int = 25,
+    duration: int = 1800,
+) -> dict:
     return {
         "metadata": {"matchId": f"EUW1_{puuid[:4]}"},
         "info": {
             "queueId": 420,
             "gameMode": "CLASSIC",
             "gameDuration": duration,
-            "participants": [{
-                "puuid": puuid,
-                "championName": "Graves",
-                "kills": kills, "deaths": deaths, "assists": assists,
-                "win": win,
-                "totalMinionsKilled": cs, "neutralMinionsKilled": 0,
-                "goldEarned": gold,
-                "totalDamageDealtToChampions": damage,
-                "visionScore": vision,
-                "firstBloodKill": False,
-                "turretKills": 0,
-                "doubleKills": 0, "tripleKills": 0,
-                "quadraKills": 0, "pentaKills": 0,
-            }],
+            "participants": [
+                {
+                    "puuid": puuid,
+                    "championName": "Graves",
+                    "kills": kills,
+                    "deaths": deaths,
+                    "assists": assists,
+                    "win": win,
+                    "totalMinionsKilled": cs,
+                    "neutralMinionsKilled": 0,
+                    "goldEarned": gold,
+                    "totalDamageDealtToChampions": damage,
+                    "visionScore": vision,
+                    "firstBloodKill": False,
+                    "turretKills": 0,
+                    "doubleKills": 0,
+                    "tripleKills": 0,
+                    "quadraKills": 0,
+                    "pentaKills": 0,
+                }
+            ],
         },
     }
 
@@ -38,6 +56,7 @@ PUUID = "player-puuid-001"
 
 
 # ── extract_participant ───────────────────────────────────────────────────────
+
 
 def test_extract_participant_found():
     match = _make_match(PUUID, 5, 3, 7, True)
@@ -57,6 +76,7 @@ def test_extract_participant_empty_match():
 
 
 # ── extract_match_stats ───────────────────────────────────────────────────────
+
 
 def test_extract_match_stats_basic():
     match = _make_match(PUUID, 10, 2, 5, True, cs=200, duration=1800)
@@ -92,6 +112,7 @@ def test_extract_match_stats_not_found():
 
 
 # ── aggregate_stats ───────────────────────────────────────────────────────────
+
 
 def test_aggregate_stats_empty():
     result = aggregate_stats([])
@@ -133,15 +154,51 @@ def test_aggregate_stats_wins_losses_sum():
 
 
 def test_aggregate_stats_most_played_champion():
-    p1 = {"champion": "Graves", "win": True, "kills": 5, "deaths": 2, "assists": 3,
-          "kda_ratio": 4.0, "cs": 150, "cs_per_min": 5.0, "gold": 12000,
-          "damage": 20000, "vision": 25, "first_blood": False, "multikills": {"penta": 0}}
-    p2 = {"champion": "Graves", "win": False, "kills": 2, "deaths": 5, "assists": 1,
-          "kda_ratio": 0.6, "cs": 100, "cs_per_min": 3.3, "gold": 8000,
-          "damage": 10000, "vision": 15, "first_blood": False, "multikills": {"penta": 0}}
-    p3 = {"champion": "Jinx", "win": True, "kills": 8, "deaths": 1, "assists": 5,
-          "kda_ratio": 13.0, "cs": 200, "cs_per_min": 6.7, "gold": 15000,
-          "damage": 30000, "vision": 30, "first_blood": True, "multikills": {"penta": 0}}
+    p1 = {
+        "champion": "Graves",
+        "win": True,
+        "kills": 5,
+        "deaths": 2,
+        "assists": 3,
+        "kda_ratio": 4.0,
+        "cs": 150,
+        "cs_per_min": 5.0,
+        "gold": 12000,
+        "damage": 20000,
+        "vision": 25,
+        "first_blood": False,
+        "multikills": {"penta": 0},
+    }
+    p2 = {
+        "champion": "Graves",
+        "win": False,
+        "kills": 2,
+        "deaths": 5,
+        "assists": 1,
+        "kda_ratio": 0.6,
+        "cs": 100,
+        "cs_per_min": 3.3,
+        "gold": 8000,
+        "damage": 10000,
+        "vision": 15,
+        "first_blood": False,
+        "multikills": {"penta": 0},
+    }
+    p3 = {
+        "champion": "Jinx",
+        "win": True,
+        "kills": 8,
+        "deaths": 1,
+        "assists": 5,
+        "kda_ratio": 13.0,
+        "cs": 200,
+        "cs_per_min": 6.7,
+        "gold": 15000,
+        "damage": 30000,
+        "vision": 30,
+        "first_blood": True,
+        "multikills": {"penta": 0},
+    }
     result = aggregate_stats([p1, p2, p3])
     assert result["most_played_champion"] == "Graves"
 
@@ -153,15 +210,27 @@ def test_aggregate_stats_performance_score_range():
 
 
 def test_aggregate_stats_penta_kills():
-    p = {"champion": "Jinx", "win": True, "kills": 20, "deaths": 0, "assists": 0,
-         "kda_ratio": 20.0, "cs": 300, "cs_per_min": 10.0, "gold": 20000,
-         "damage": 50000, "vision": 40, "first_blood": True,
-         "multikills": {"penta": 2}}
+    p = {
+        "champion": "Jinx",
+        "win": True,
+        "kills": 20,
+        "deaths": 0,
+        "assists": 0,
+        "kda_ratio": 20.0,
+        "cs": 300,
+        "cs_per_min": 10.0,
+        "gold": 20000,
+        "damage": 50000,
+        "vision": 40,
+        "first_blood": True,
+        "multikills": {"penta": 2},
+    }
     result = aggregate_stats([p])
     assert result["total_penta_kills"] == 2
 
 
 # ── rank_players ──────────────────────────────────────────────────────────────
+
 
 def test_rank_players_order():
     players = [

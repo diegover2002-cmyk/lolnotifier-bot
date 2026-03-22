@@ -2,6 +2,7 @@
 Telegram command handlers.
 All player registration now uses Riot ID format: GameName#TAG region.
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,9 +45,7 @@ def _parse_riot_id(args: list[str]) -> tuple[str, str] | None:
     return None
 
 
-async def _resolve_account(
-    game_name: str, tag_line: str, region: str
-) -> dict | None:
+async def _resolve_account(game_name: str, tag_line: str, region: str) -> dict | None:
     cluster = ACCOUNT_CLUSTERS.get(region)
     if not cluster:
         return None
@@ -55,6 +54,7 @@ async def _resolve_account(
 
 
 # ── Commands ──────────────────────────────────────────────────────────────────
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(format_help())
@@ -71,10 +71,7 @@ async def set_summoner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     args = list(context.args or [])
     if len(args) < 2:
-        await update.message.reply_text(
-            "Uso: /set_summoner GameName#TAG region\n"
-            "Ej: /set_summoner LaBísica#EUW euw1"
-        )
+        await update.message.reply_text("Uso: /set_summoner GameName#TAG region\nEj: /set_summoner LaBísica#EUW euw1")
         return
 
     region = args[-1].lower()
@@ -82,9 +79,7 @@ async def set_summoner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     parsed = _parse_riot_id(riot_id_args)
 
     if not parsed:
-        await update.message.reply_text(
-            "Formato incorrecto. Usa: /set_summoner GameName#TAG region"
-        )
+        await update.message.reply_text("Formato incorrecto. Usa: /set_summoner GameName#TAG region")
         return
 
     game_name, tag_line = parsed
@@ -94,8 +89,7 @@ async def set_summoner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     account = await _resolve_account(game_name, tag_line, region)
     if not account:
         await update.message.reply_text(
-            f"❌ No encontré la cuenta {game_name}#{tag_line} en {region}.\n"
-            "Verifica el Riot ID y la región."
+            f"❌ No encontré la cuenta {game_name}#{tag_line} en {region}.\nVerifica el Riot ID y la región."
         )
         return
 
@@ -121,9 +115,7 @@ async def set_summoner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = await get_user(DB_PATH, update.effective_user.id)
     if not user:
-        await update.message.reply_text(
-            "No tienes cuenta ligada.\nUsa /set_summoner GameName#TAG region"
-        )
+        await update.message.reply_text("No tienes cuenta ligada.\nUsa /set_summoner GameName#TAG region")
         return
     await update.message.reply_text(format_status(user))
 
@@ -146,9 +138,7 @@ async def add_pro_player(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """
     args = list(context.args or [])
     if len(args) < 2:
-        await update.message.reply_text(
-            "Uso: /add_pro GameName#TAG region\nEj: /add_pro Caps#EUW euw1"
-        )
+        await update.message.reply_text("Uso: /add_pro GameName#TAG region\nEj: /add_pro Caps#EUW euw1")
         return
 
     region = args[-1].lower()
@@ -162,20 +152,20 @@ async def add_pro_player(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     account = await _resolve_account(game_name, tag_line, region)
     if not account:
-        await update.message.reply_text(
-            f"❌ No encontré {game_name}#{tag_line} en {region}."
-        )
+        await update.message.reply_text(f"❌ No encontré {game_name}#{tag_line} en {region}.")
         return
 
     puuid = account.get("puuid")
     summoner_name = f"{game_name}#{tag_line}"
     pro_id = await add_pro(
-        DB_PATH, summoner_name, region,
-        game_name=game_name, tag_line=tag_line, puuid=puuid,
+        DB_PATH,
+        summoner_name,
+        region,
+        game_name=game_name,
+        tag_line=tag_line,
+        puuid=puuid,
     )
-    await update.message.reply_text(
-        f"✅ Pro añadido [ID {pro_id}]: {game_name}#{tag_line} ({region})"
-    )
+    await update.message.reply_text(f"✅ Pro añadido [ID {pro_id}]: {game_name}#{tag_line} ({region})")
 
 
 async def list_pros(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -204,9 +194,7 @@ async def player_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     """
     user = await get_user(DB_PATH, update.effective_user.id)
     if not user:
-        await update.message.reply_text(
-            "No tienes cuenta ligada.\nUsa /set_summoner GameName#TAG region"
-        )
+        await update.message.reply_text("No tienes cuenta ligada.\nUsa /set_summoner GameName#TAG region")
         return
 
     puuid = user.get("puuid")
@@ -217,9 +205,7 @@ async def player_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         player_label = f"{player_label}#{tag}"
 
     if not puuid:
-        await update.message.reply_text(
-            "⚠️ PUUID no disponible. Vuelve a registrar tu cuenta con /set_summoner."
-        )
+        await update.message.reply_text("⚠️ PUUID no disponible. Vuelve a registrar tu cuenta con /set_summoner.")
         return
 
     await update.message.reply_text("⏳ Calculando estadísticas de tus últimas 5 partidas...")
@@ -235,9 +221,7 @@ async def player_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                     per_match.append(s)
 
     if not per_match:
-        await update.message.reply_text(
-            "No se encontraron partidas recientes para calcular estadísticas."
-        )
+        await update.message.reply_text("No se encontraron partidas recientes para calcular estadísticas.")
         return
 
     agg = aggregate_stats(per_match)
@@ -250,9 +234,7 @@ async def load_pros(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     /load_pros — bulk-insert the curated PRO_PLAYERS dataset.
     Skips entries that already exist.
     """
-    await update.message.reply_text(
-        f"⏳ Cargando {len(PRO_PLAYERS)} pros del dataset oficial..."
-    )
+    await update.message.reply_text(f"⏳ Cargando {len(PRO_PLAYERS)} pros del dataset oficial...")
     added = 0
     skipped = 0
     for entry in PRO_PLAYERS:
@@ -272,7 +254,5 @@ async def load_pros(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             skipped += 1
 
     await update.message.reply_text(
-        f"✅ Dataset cargado.\n"
-        f"Añadidos: {added}  |  Ya existían: {skipped}\n"
-        "Usa /list_pros para ver la lista."
+        f"✅ Dataset cargado.\nAñadidos: {added}  |  Ya existían: {skipped}\nUsa /list_pros para ver la lista."
     )

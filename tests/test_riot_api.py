@@ -2,6 +2,7 @@
 Unit tests for riot_api.py.
 All HTTP calls are mocked — no real API requests are made.
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -81,6 +82,7 @@ def test_parse_match_for_puuid_zero_deaths():
 
 # ── get_match_history_ids (mocked HTTP) ──────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_get_match_history_ids_success():
     mock_resp = AsyncMock()
@@ -92,8 +94,7 @@ async def test_get_match_history_ids_success():
     mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
 
-    with patch("riot_api.RIOT_API_KEY", "fake-key"), \
-         patch("riot_api._rate_delay", new_callable=AsyncMock):
+    with patch("riot_api.RIOT_API_KEY", "fake-key"), patch("riot_api._rate_delay", new_callable=AsyncMock):
         result = await get_match_history_ids(mock_session, "euw1", "test-puuid", count=3)
 
     assert result == ["EUW1_1", "EUW1_2", "EUW1_3"]
@@ -109,14 +110,14 @@ async def test_get_match_history_ids_403_returns_empty():
     mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
 
-    with patch("riot_api.RIOT_API_KEY", "fake-key"), \
-         patch("riot_api._rate_delay", new_callable=AsyncMock):
+    with patch("riot_api.RIOT_API_KEY", "fake-key"), patch("riot_api._rate_delay", new_callable=AsyncMock):
         result = await get_match_history_ids(mock_session, "euw1", "test-puuid")
 
     assert result == []
 
 
 # ── get_match_info (mocked HTTP) ─────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_match_info_success():
@@ -129,8 +130,7 @@ async def test_get_match_info_success():
     mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
 
-    with patch("riot_api.RIOT_API_KEY", "fake-key"), \
-         patch("riot_api._rate_delay", new_callable=AsyncMock):
+    with patch("riot_api.RIOT_API_KEY", "fake-key"), patch("riot_api._rate_delay", new_callable=AsyncMock):
         result = await get_match_info(mock_session, "euw1", "EUW1_123")
 
     assert result == SAMPLE_MATCH
@@ -146,8 +146,7 @@ async def test_get_match_info_404_returns_none():
     mock_session = MagicMock()
     mock_session.get = MagicMock(return_value=mock_resp)
 
-    with patch("riot_api.RIOT_API_KEY", "fake-key"), \
-         patch("riot_api._rate_delay", new_callable=AsyncMock):
+    with patch("riot_api.RIOT_API_KEY", "fake-key"), patch("riot_api._rate_delay", new_callable=AsyncMock):
         result = await get_match_info(mock_session, "euw1", "EUW1_NOTFOUND")
 
     assert result is None

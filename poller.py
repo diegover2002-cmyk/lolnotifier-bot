@@ -4,6 +4,7 @@ Strategy: compare latest match_id from API against stored last_match_id.
 If different → new match completed → fetch details → notify.
 Works with dev API key (no spectator/summoner endpoints required).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -147,6 +148,7 @@ async def _process_player(
 
 # ── User poller ───────────────────────────────────────────────────────────────
 
+
 async def poll_users(session: aiohttp.ClientSession, bot: Any, db_path: str) -> None:
     while True:
         users = await get_all_users(db_path)
@@ -155,7 +157,9 @@ async def poll_users(session: aiohttp.ClientSession, bot: Any, db_path: str) -> 
                 continue
             try:
                 new_match_id = await _process_player(
-                    session, bot, user,
+                    session,
+                    bot,
+                    user,
                     notify_ids=[user["user_id"]],
                     is_pro=False,
                 )
@@ -172,6 +176,7 @@ async def poll_users(session: aiohttp.ClientSession, bot: Any, db_path: str) -> 
 
 # ── Pro poller ────────────────────────────────────────────────────────────────
 
+
 async def poll_pros(session: aiohttp.ClientSession, bot: Any, db_path: str) -> None:
     while True:
         pros = await get_all_pros(db_path)
@@ -182,7 +187,9 @@ async def poll_pros(session: aiohttp.ClientSession, bot: Any, db_path: str) -> N
                 continue
             try:
                 new_match_id = await _process_player(
-                    session, bot, pro,
+                    session,
+                    bot,
+                    pro,
                     notify_ids=user_ids,
                     is_pro=True,
                 )
