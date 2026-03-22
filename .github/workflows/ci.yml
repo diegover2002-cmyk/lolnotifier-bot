@@ -21,6 +21,40 @@ permissions:
 
 jobs:
 
+  # ── TruffleHog — secrets detection ─────────────────────────────────────────
+  trufflehog:
+    name: TruffleHog (secrets)
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.result.outputs.status }}
+      detail: ${{ steps.result.outputs.detail }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history needed for diff scan
+
+      - name: TruffleHog scan
+        id: scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
+          extra_args: --only-verified
+        continue-on-error: true
+
+      - name: Set output
+        id: result
+        run: |
+          if [ "${{ steps.scan.outcome }}" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "detail=Verified secrets detected in commits — block merge immediately" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "detail=No verified secrets found in diff" >> $GITHUB_OUTPUT
+          fi
+
   # ── Lint ─────────────────────────────────────────────────────────────────────
   lint:
     name: Lint (ruff)
@@ -240,13 +274,15 @@ jobs:
   report:
     name: Post CI Report
     runs-on: ubuntu-latest
-    needs: [lint, unit-tests, security]
+    needs: [trufflehog, lint, unit-tests, security]
     if: always() && github.event_name == 'pull_request'
 
     steps:
       - name: Post summary comment
         uses: actions/github-script@v7
         env:
+          TRUFFLEHOG_STATUS: ${{ needs.trufflehog.outputs.status }}
+          TRUFFLEHOG_DETAIL: ${{ needs.trufflehog.outputs.detail }}
           LINT_STATUS: ${{ needs.lint.outputs.status }}
           LINT_DETAIL: ${{ needs.lint.outputs.detail }}
           TEST_STATUS: ${{ needs.unit-tests.outputs.status }}
@@ -265,14 +301,15 @@ jobs:
               return '⏭️';
             }
 
+            const truffle = process.env.TRUFFLEHOG_STATUS;
             const lint     = process.env.LINT_STATUS;
             const test     = process.env.TEST_STATUS;
             const bandit   = process.env.BANDIT_STATUS;
             const checkov  = process.env.CHECKOV_STATUS;
 
-            const overall = [lint, test, bandit, checkov].includes('failure')
+            const overall = [truffle, lint, test, bandit, checkov].includes('failure')
               ? '❌ **Some checks failed — review required**'
-              : [lint, test, bandit, checkov].includes('warning')
+              : [truffle, lint, test, bandit, checkov].includes('warning')
               ? '⚠️ **All checks passed with warnings**'
               : '✅ **All checks passed**';
 
@@ -286,6 +323,7 @@ jobs:
               ``,
               `| Check | Status | Detail |`,
               `|---|---|---|`,
+              `| TruffleHog (secrets) | ${icon(process.env.TRUFFLEHOG_STATUS)} ${process.env.TRUFFLEHOG_STATUS} | ${process.env.TRUFFLEHOG_DETAIL} |`,
               `| Lint (ruff) | ${icon(lint)} ${lint} | ${process.env.LINT_DETAIL} |`,
               `| Unit Tests | ${icon(test)} ${test} | ${process.env.TEST_DETAIL} |`,
               `| Coverage | ${test === 'success' ? '✅' : '⚠️'} | ${process.env.TEST_COVERAGE} |`,

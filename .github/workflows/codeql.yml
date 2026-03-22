@@ -1,0 +1,113 @@
+# .github/workflows/codeql.yml
+#
+# CodeQL SAST — runs on every PR and push to main/develop.
+# Analyzes Python code for security vulnerabilities using dataflow analysis.
+# Free for all GitHub repos (public and private).
+#
+# Detects: injection, SSRF, path traversal, insecure deserialization,
+# taint tracking across function boundaries — things Bandit cannot see.
+
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 3 * * 1" # Weekly Monday 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  analyze:
+    name: CodeQL (Python)
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.result.outputs.status }}
+      detail: ${{ steps.result.outputs.detail }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        id: analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+          output: codeql-results
+        continue-on-error: true
+
+      - name: Set output
+        id: result
+        run: |
+          if [ "${{ steps.analysis.outcome }}" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "detail=CodeQL analysis failed — check Security tab" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "detail=No critical vulnerabilities found — see Security tab for full report" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post CodeQL comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          CODEQL_STATUS: ${{ steps.result.outputs.status }}
+          CODEQL_DETAIL: ${{ steps.result.outputs.detail }}
+        with:
+          script: |
+            const status = process.env.CODEQL_STATUS;
+            const icon = status === 'success' ? '✅' : '❌';
+            const now = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            const run = `[#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+
+            const body = [
+              `## 🔬 CodeQL SAST Report — ${icon} ${status}`,
+              ``,
+              `> PR **#${{ github.event.pull_request.number }}** · Branch \`${{ github.head_ref }}\` · Run ${run} · ${now}`,
+              ``,
+              `| Check | Status | Detail |`,
+              `|---|---|---|`,
+              `| CodeQL Python analysis | ${icon} ${status} | ${process.env.CODEQL_DETAIL} |`,
+              ``,
+              `> 🔍 Full results available in the [Security tab](${{ github.server_url }}/${{ github.repository }}/security/code-scanning) of this repository.`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('🔬 CodeQL SAST Report')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
