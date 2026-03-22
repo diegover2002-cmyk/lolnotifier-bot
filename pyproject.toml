@@ -38,3 +38,9 @@ log_cli_level = "INFO"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["*.py"]
+
+[tool.ruff]
+exclude = ["scripts/", "tests/functional/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
