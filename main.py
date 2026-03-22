@@ -24,12 +24,10 @@ from handlers import (
     status,
     toggle_notifs,
 )
+from logging_setup import setup_logging
 from poller import poll_pros, poll_users
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(name)s %(levelname)s %(message)s",
-)
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
