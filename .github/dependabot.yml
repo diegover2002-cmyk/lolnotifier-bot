@@ -34,3 +34,8 @@ updates:
       - github-actions
     commit-message:
       prefix: "chore(actions)"
+    ignore:
+      # azure/login v3 changed auth API — client-secret no longer supported as standalone input
+      # Pinned to v2 until OIDC federation is implemented (EXC-001 remediation)
+      - dependency-name: "azure/login"
+        update-types: ["version-update:semver-major"]
