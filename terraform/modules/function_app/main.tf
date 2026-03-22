@@ -20,6 +20,9 @@
 
 # ── App Service Plan (Consumption = Y1, pay-per-execution) ───────────────────
 
+#checkov:skip=CKV_AZURE_221:EXC-006 Function App public network access cannot be disabled on Consumption plan (Y1) — VNet integration requires Premium EP1+ plan. Cost constraint for dev environment. See docs/compliance/exceptions-registry.json.
+#checkov:skip=CKV_AZURE_225:EXC-007 App Service Plan zone redundancy not available on Y1 Consumption plan. Requires Premium or Isolated tier.
+#checkov:skip=CKV_AZURE_212:EXC-007 Minimum instance count >1 not applicable to Consumption plan (Y1) — scales to 0 by design.
 resource "azurerm_service_plan" "main" {
   name                = "asp-lolnotifier-${var.environment}"
   location            = var.location

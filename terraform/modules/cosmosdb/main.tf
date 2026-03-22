@@ -17,6 +17,10 @@
 #   - Schema is forward-compatible: ranked fields exist but remain null until prod key
 # =============================================================================
 
+#checkov:skip=CKV_AZURE_101:EXC-003 CosmosDB public network access enabled — serverless tier does not support VNet service endpoints or private endpoints without Premium tier. See docs/compliance/exceptions-registry.json.
+#checkov:skip=CKV_AZURE_99:EXC-003 Same as CKV_AZURE_101 — no VNet filter available on serverless CosmosDB.
+#checkov:skip=CKV_AZURE_100:EXC-005 Customer-managed keys require Azure Key Vault Premium + HSM. Not cost-justified for dev portfolio project. Default AES-256 encryption at rest is active.
+#checkov:skip=CKV_AZURE_140:EXC-004 Local authentication (connection string) required — bot uses CosmosDB SDK with connection string. Managed identity for CosmosDB data plane is on the roadmap. See docs/compliance/exceptions-registry.json.
 resource "azurerm_cosmosdb_account" "main" {
   name                = "cosmos-lolnotifier-${var.environment}-${var.suffix}"
   location            = var.location
