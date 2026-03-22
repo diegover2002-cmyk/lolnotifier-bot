@@ -1,6 +1,6 @@
 {
   "$schema": "https://lolnotifier.dev/schemas/exceptions-registry/v1",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "last_updated": "2026-03-22",
   "project": "lolnotifier-bot",
   "registry": [
@@ -10,6 +10,8 @@
       "resource": "kv-lolnotifier-dev-h4dx",
       "resource_type": "azurerm_key_vault",
       "policy_controls": ["CKV_AZURE_109", "CKV_AZURE_189", "MCSB-NS-2"],
+      "azure_policy_exemption_id": "/subscriptions/4f23201e-3333-4d6a-879b-6a6bea485b9f/resourceGroups/rg-lolnotifier-dev/providers/Microsoft.Authorization/policyExemptions/EXC-001-kv-public-access",
+      "azure_policy_exemption_category": "Waiver",
       "title": "Key Vault network ACL set to Allow for CI/CD pipeline access",
       "justification": "GitHub Actions runners use dynamic ephemeral IPs from Azure-hosted pools. These IPs cannot be statically allowlisted in Key Vault firewall rules. The Terraform apply job requires data-plane access to Key Vault secrets during refresh. Compensating control: RBAC-only authorization (enable_rbac_authorization=true) ensures only the CI service principal with Key Vault Secrets Officer role can access secrets. No anonymous or unauthenticated access is possible.",
       "compensating_controls": [
@@ -27,7 +29,7 @@
       "reference_pr": "https://github.com/diegover2002-cmyk/lolnotifier-bot/pull/10",
       "remediation_path": "Implement OIDC federation for GitHub Actions to Azure (workload identity) — eliminates need for static IP allowlist. Tracked in future-improvements.md.",
       "risk_level": "low",
-      "audit_notes": "Key Vault firewall was originally Deny. Changed to Allow on 2026-03-22 after repeated 403 ForbiddenByFirewall errors in CI. RBAC remains the primary access control."
+      "audit_notes": "Key Vault firewall was originally Deny. Changed to Allow on 2026-03-22 after repeated 403 ForbiddenByFirewall errors in CI. RBAC remains the primary access control. Azure Policy exemption registered 2026-03-22."
     },
     {
       "id": "EXC-002",
@@ -35,6 +37,8 @@
       "resource": "stlolnotifierdevh4dx",
       "resource_type": "azurerm_storage_account",
       "policy_controls": ["CKV_AZURE_59", "CKV_AZURE_35", "MCSB-NS-2"],
+      "azure_policy_exemption_id": "/subscriptions/4f23201e-3333-4d6a-879b-6a6bea485b9f/resourceGroups/rg-lolnotifier-dev/providers/Microsoft.Authorization/policyExemptions/EXC-002-storage-network-rules",
+      "azure_policy_exemption_category": "Mitigated",
       "title": "Storage Account network rules omitted — Function App Consumption plan constraint",
       "justification": "Azure Function App on Consumption plan (Y1 SKU) uses shared Azure infrastructure and does not support VNet injection. Enabling network_rules with default_action=Deny blocks the Function App runtime from accessing the storage account, which is required for host coordination, blob triggers, and file share mounting. This is a documented Azure platform limitation for Y1 Consumption plans.",
       "compensating_controls": [
@@ -53,7 +57,7 @@
       "reference_pr": null,
       "remediation_path": "Upgrade to Function App Premium plan (EP1) to enable VNet integration and storage firewall. Cost: ~$150/month. Not justified for dev portfolio project.",
       "risk_level": "low",
-      "audit_notes": "Storage account previously had network_rules Deny which caused 403 errors on azurerm_storage_share resource during Terraform apply. Removed on 2026-03-22. Azure platform limitation confirmed in Microsoft docs."
+      "audit_notes": "Storage account previously had network_rules Deny which caused 403 errors on azurerm_storage_share resource during Terraform apply. Removed on 2026-03-22. Azure platform limitation confirmed in Microsoft docs. Azure Policy exemption registered 2026-03-22."
     },
     {
       "id": "EXC-003",
@@ -61,6 +65,8 @@
       "resource": "cosmos-lolnotifier-dev-h4dx",
       "resource_type": "azurerm_cosmosdb_account",
       "policy_controls": ["CKV_AZURE_101", "CKV_AZURE_99", "MCSB-NS-2"],
+      "azure_policy_exemption_id": "/subscriptions/4f23201e-3333-4d6a-879b-6a6bea485b9f/resourceGroups/rg-lolnotifier-dev/providers/Microsoft.Authorization/policyExemptions/EXC-003-cosmosdb-public-access",
+      "azure_policy_exemption_category": "Mitigated",
       "title": "CosmosDB public network access enabled — serverless tier VNet limitation",
       "justification": "CosmosDB serverless tier does not support VNet service endpoints or private endpoints without upgrading to provisioned throughput with a dedicated tier. The bot uses serverless CosmosDB to achieve near-zero cost (~$0-2/month). Enabling private endpoints would require provisioned throughput + private DNS zones, adding ~$50-100/month in Azure costs.",
       "compensating_controls": [
@@ -79,17 +85,19 @@
       "reference_pr": null,
       "remediation_path": "Migrate to provisioned throughput CosmosDB with private endpoint when project moves to production with real traffic. Estimated cost: +$50/month.",
       "risk_level": "medium",
-      "audit_notes": "Data stored is non-sensitive: match statistics, Telegram user IDs, pro player names. No PII beyond Telegram user IDs which are public identifiers."
+      "audit_notes": "Data stored is non-sensitive: match statistics, Telegram user IDs, pro player names. No PII beyond Telegram user IDs which are public identifiers. Azure Policy exemption registered 2026-03-22."
     },
     {
       "id": "EXC-004",
-      "status": "active",
+      "status": "remediated",
       "resource": "cosmos-lolnotifier-dev-h4dx",
       "resource_type": "azurerm_cosmosdb_account",
       "policy_controls": ["CKV_AZURE_140", "MCSB-IM-1"],
+      "azure_policy_exemption_id": null,
       "title": "CosmosDB local authentication (connection string) enabled — SDK requirement",
-      "justification": "The bot uses the Azure CosmosDB Python SDK with a connection string for data plane operations. CosmosDB managed identity for data plane (RBAC) requires the Azure Cosmos DB built-in role assignments and SDK changes to use DefaultAzureCredential instead of connection strings. This is a code-level change tracked in future-improvements.md.",
+      "justification": "REMEDIATED: CosmosDB local authentication is now disabled (disableLocalAuth=true confirmed via az cosmosdb show on 2026-03-22). The cosmosdb-local-auth policy control is now compliant. No Azure Policy exemption required.",
       "compensating_controls": [
+        "local_authentication_disabled = true (confirmed in Azure)",
         "Connection string stored in Key Vault (not in source code or app settings)",
         "Function App reads connection string via Key Vault reference at runtime",
         "access_key_metadata_writes_enabled = false (control plane protection)",
@@ -98,12 +106,13 @@
       "requestor": "diego.estebanrguez@gmail.com",
       "approver": "diego.estebanrguez@gmail.com",
       "created_at": "2026-03-22T04:53:03Z",
+      "remediated_at": "2026-03-22T07:20:00Z",
       "expires_at": "2026-12-31T00:00:00Z",
       "review_date": "2026-09-01",
       "reference_pr": null,
-      "remediation_path": "Refactor database.py to use DefaultAzureCredential + CosmosDB RBAC role assignments. Set local_authentication_disabled = true in Terraform. Estimated effort: 2-4 hours.",
+      "remediation_path": "COMPLETED — disableLocalAuth confirmed true via az cosmosdb show on 2026-03-22.",
       "risk_level": "low",
-      "audit_notes": "Connection string is never logged or exposed. Stored exclusively in Key Vault. Function App managed identity has Key Vault Secrets User role."
+      "audit_notes": "Verified compliant on 2026-03-22. localAuth: false confirmed. Exception closed."
     },
     {
       "id": "EXC-005",
@@ -111,8 +120,9 @@
       "resource": "cosmos-lolnotifier-dev-h4dx",
       "resource_type": "azurerm_cosmosdb_account",
       "policy_controls": ["CKV_AZURE_100", "MCSB-DP-5"],
+      "azure_policy_exemption_id": null,
       "title": "CosmosDB customer-managed keys (CMK) not enabled",
-      "justification": "Customer-managed keys for CosmosDB require Azure Key Vault Premium SKU with HSM-backed keys. Key Vault Premium costs ~$5/month vs Standard ~$0.03/month. For a dev portfolio project storing non-sensitive match statistics, the default Microsoft-managed AES-256 encryption at rest provides adequate protection. CMK adds operational complexity (key rotation, HSM management) without meaningful security benefit for this data classification.",
+      "justification": "Customer-managed keys for CosmosDB require Azure Key Vault Premium SKU with HSM-backed keys. Key Vault Premium costs ~$5/month vs Standard ~$0.03/month. For a dev portfolio project storing non-sensitive match statistics, the default Microsoft-managed AES-256 encryption at rest provides adequate protection. CMK adds operational complexity (key rotation, HSM management) without meaningful security benefit for this data classification. Note: no policy in the MCSB initiative covers CMK for CosmosDB — Checkov-only finding.",
       "compensating_controls": [
         "Default AES-256 encryption at rest (Microsoft-managed keys)",
         "Data classification: non-sensitive (match stats, public player names)",
@@ -126,7 +136,7 @@
       "reference_pr": null,
       "remediation_path": "Enable CMK when project handles sensitive data or moves to production with real user PII. Requires Key Vault Premium SKU upgrade.",
       "risk_level": "low",
-      "audit_notes": "Data stored does not meet the threshold for CMK requirement under MCSB. Accepted risk for dev environment."
+      "audit_notes": "Data stored does not meet the threshold for CMK requirement under MCSB. Accepted risk for dev environment. No Azure Policy exemption needed — not covered by initiative."
     },
     {
       "id": "EXC-006",
@@ -134,6 +144,8 @@
       "resource": "func-lolnotifier-dev-h4dx",
       "resource_type": "azurerm_linux_function_app",
       "policy_controls": ["CKV_AZURE_221", "MCSB-NS-2"],
+      "azure_policy_exemption_id": "/subscriptions/4f23201e-3333-4d6a-879b-6a6bea485b9f/resourceGroups/rg-lolnotifier-dev/providers/Microsoft.Authorization/policyExemptions/EXC-006-func-public-access",
+      "azure_policy_exemption_category": "Mitigated",
       "title": "Function App public network access cannot be disabled on Consumption plan",
       "justification": "Disabling public network access on Azure Function App requires VNet integration, which is only available on Premium (EP1+) or Dedicated (D1+) App Service plans. The Y1 Consumption plan does not support VNet injection. The Function App is triggered by Logic App HTTP calls and must be publicly reachable. Upgrading to EP1 would cost ~$150/month vs ~$0-5/month on Y1.",
       "compensating_controls": [
@@ -151,7 +163,7 @@
       "reference_pr": null,
       "remediation_path": "Upgrade to EP1 Premium plan when production traffic justifies cost. Enables VNet integration, private endpoints, and zone redundancy.",
       "risk_level": "low",
-      "audit_notes": "Azure platform structural limitation. Not a misconfiguration. Confirmed in Azure docs: VNet integration requires Premium plan."
+      "audit_notes": "Azure platform structural limitation. Not a misconfiguration. Confirmed in Azure docs: VNet integration requires Premium plan. Azure Policy exemption registered 2026-03-22."
     },
     {
       "id": "EXC-007",
@@ -159,8 +171,9 @@
       "resource": "asp-lolnotifier-dev",
       "resource_type": "azurerm_service_plan",
       "policy_controls": ["CKV_AZURE_225", "CKV_AZURE_212", "MCSB-RE-5"],
+      "azure_policy_exemption_id": null,
       "title": "App Service Plan zone redundancy and minimum instances not applicable to Y1 Consumption",
-      "justification": "Zone redundancy and minimum instance count >1 are not available on the Y1 Consumption plan. These features require Premium Elastic (EP1+) or Isolated (I1+) plans. The bot is a non-critical personal notification service — single-instance availability is acceptable. SLA requirements do not justify the cost of zone-redundant deployment.",
+      "justification": "Zone redundancy and minimum instance count >1 are not available on the Y1 Consumption plan. These features require Premium Elastic (EP1+) or Isolated (I1+) plans. The bot is a non-critical personal notification service — single-instance availability is acceptable. SLA requirements do not justify the cost of zone-redundant deployment. Note: no policy in the MCSB initiative covers zone redundancy — Checkov-only finding.",
       "compensating_controls": [
         "Application Insights exception alerts configured",
         "Logic App scheduler retries on HTTP failure",
@@ -174,23 +187,21 @@
       "reference_pr": null,
       "remediation_path": "Upgrade to EP1 + zone redundancy when SLA requirements demand >99.9% availability.",
       "risk_level": "info",
-      "audit_notes": "Structural Azure platform limitation. Not a security risk. Availability trade-off accepted for cost optimization."
+      "audit_notes": "Structural Azure platform limitation. Not a security risk. Availability trade-off accepted for cost optimization. No Azure Policy exemption needed — not covered by initiative."
     }
   ],
   "summary": {
     "total_exceptions": 7,
+    "active": 6,
+    "remediated": 1,
     "by_risk_level": {
       "critical": 0,
       "high": 0,
       "medium": 1,
-      "low": 5,
+      "low": 4,
       "info": 1
     },
-    "by_status": {
-      "active": 7,
-      "expired": 0,
-      "remediated": 0
-    },
+    "azure_policy_exemptions_registered": 4,
     "structural_platform_exceptions": 4,
     "cost_constraint_exceptions": 2,
     "temporary_ci_exceptions": 1
