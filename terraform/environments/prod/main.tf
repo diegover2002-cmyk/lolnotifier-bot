@@ -1,6 +1,7 @@
 # terraform/environments/prod/main.tf
-# Production environment entry point.
-# Remote backend must be configured before first apply.
+# DEPRECATED — The active deployment uses terraform/main.tf directly via GitHub Actions.
+# This environments/ structure is kept for reference only.
+# Do not apply from this directory.
 
 terraform {
   backend "azurerm" {

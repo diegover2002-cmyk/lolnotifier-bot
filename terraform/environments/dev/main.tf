@@ -1,6 +1,7 @@
 # terraform/environments/dev/main.tf
-# Dev environment entry point.
-# Run: terraform init && terraform plan && terraform apply
+# DEPRECATED — The active deployment uses terraform/main.tf directly via GitHub Actions.
+# This environments/ structure is kept for reference only.
+# Do not apply from this directory.
 
 module "lolnotifier" {
   source = "../../"

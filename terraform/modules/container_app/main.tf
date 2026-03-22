@@ -1,5 +1,9 @@
 # terraform/modules/container_app/main.tf
-# Azure Container App running the lolnotifier-bot Docker image.
+# DEPRECATED — This module is no longer used in production.
+# The bot runs on Azure Function App (see modules/function_app/).
+# Kept for reference only. Do not apply.
+#
+# Original: Azure Container App running the lolnotifier-bot Docker image.
 # Secrets are injected from Key Vault via managed identity — no env vars with raw tokens.
 
 resource "azurerm_log_analytics_workspace" "main" {

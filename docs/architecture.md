@@ -30,10 +30,22 @@
 
      ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
      │  database.py │    │   stats.py   │    │ formatter.py │
-     │  (SQLite /   │    │  (pure math) │    │ (pure text)  │
-     │  CosmosDB)   │    │              │    │              │
+     │  (aiosqlite) │    │  (pure math) │    │ (pure text)  │
      └──────────────┘    └──────────────┘    └──────────────┘
 ```
+
+---
+
+## Deployment Target
+
+The bot runs as an **Azure Function App** (Python 3.11, Linux, Consumption Y1 plan).
+
+- Triggered by a **Logic App Scheduler** every 5 minutes via POST `/api/poll`
+- Secrets injected via **Key Vault references** (`@Microsoft.KeyVault(SecretUri=...)`) — no plaintext in app settings
+- **System-assigned Managed Identity** with `Key Vault Secrets User` role
+- Storage Account provides the Function App runtime file share
+- **CosmosDB** (Serverless) is the production database backend (`DB_BACKEND=cosmosdb`)
+- **SQLite** (`aiosqlite`) is used for local development only
 
 ---
 
@@ -63,7 +75,7 @@ asyncio.run(main())
   │                 await app.stop()
 ```
 
-The single `aiohttp.ClientSession` is created in `main()` and passed down to both pollers and handlers. This avoids the overhead of creating a new session per request.
+The single `aiohttp.ClientSession` is created in `main()` and passed down to both pollers and handlers.
 
 ---
 
@@ -137,7 +149,7 @@ player_stats(update, context)
 | `poller.py` | ✅ | ❌ | Background polling loop |
 | `riot_api.py` | ✅ | ❌ | HTTP client for Riot API |
 | `riot_account.py` | ✅ | ❌ | account/v1 resolution |
-| `database.py` | ✅ | ❌ | SQLite (local) / CosmosDB (Azure) read/write |
+| `database.py` | ✅ | ❌ | SQLite read/write (local dev) |
 | `stats.py` | ❌ | ✅ | Math over match data |
 | `formatter.py` | ❌ | ✅ | String formatting |
 | `pro_players.py` | ❌ | ✅ | Static dataset |
