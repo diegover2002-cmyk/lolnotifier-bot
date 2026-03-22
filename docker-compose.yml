@@ -1,0 +1,10 @@
+services:
+  lolnotifier:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./lolnotifier.db:/app/lolnotifier.db
+      - ./logs:/app/logs
+    restart: unless-stopped
+    command: python main.py

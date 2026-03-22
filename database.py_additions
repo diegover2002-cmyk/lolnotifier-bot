@@ -1,0 +1,15 @@
+async def update_user_last_poll_time(db_path: str, user_id: int, poll_time: str):
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            'UPDATE users SET last_poll_time = ? WHERE user_id = ?',
+            (poll_time, user_id)
+        )
+        await db.commit()
+
+async def update_pro_last_poll_time(db_path: str, pro_id: int, poll_time: str):
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            'UPDATE pro_players SET last_poll_time = ? WHERE id = ?',
+            (poll_time, pro_id)
+        )
+        await db.commit()
