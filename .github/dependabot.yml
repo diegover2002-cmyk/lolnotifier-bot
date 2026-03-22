@@ -39,3 +39,6 @@ updates:
       # Pinned to v2 until OIDC federation is implemented (EXC-001 remediation)
       - dependency-name: "azure/login"
         update-types: ["version-update:semver-major"]
+      # actions/download-artifact latest stable is v4 — Dependabot incorrectly proposes v8
+      - dependency-name: "actions/download-artifact"
+        update-types: ["version-update:semver-major"]
