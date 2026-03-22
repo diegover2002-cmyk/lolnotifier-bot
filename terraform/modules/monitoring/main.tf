@@ -47,6 +47,8 @@ resource "azurerm_monitor_diagnostic_setting" "function_app" {
     enabled  = true
   }
 }
+
+resource "azurerm_monitor_metric_alert" "container_restarts" {
   name                = "alert-lolnotifier-restarts-${var.environment}"
   resource_group_name = var.resource_group_name
   scopes              = [azurerm_application_insights.main.id]
