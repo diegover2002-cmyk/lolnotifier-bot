@@ -1,0 +1,50 @@
+# =============================================================================
+# terraform/terraform.tfvars.example
+#
+# Copy to terraform.tfvars for local use.
+# terraform.tfvars is excluded by .gitignore — NEVER commit it.
+#
+# SECRETS must be passed as environment variables, NOT in this file:
+#
+#   Windows (PowerShell):
+#     $env:TF_VAR_telegram_token   = "<your_telegram_token>"
+#     $env:TF_VAR_riot_api_key     = "<your_riot_api_key>"
+#     $env:TF_VAR_telegram_chat_id = "<your_chat_id>"
+#
+#   Linux / macOS:
+#     export TF_VAR_telegram_token="<your_telegram_token>"
+#     export TF_VAR_riot_api_key="<your_riot_api_key>"
+#     export TF_VAR_telegram_chat_id="<your_chat_id>"
+#
+# AZURE AUTH (choose one):
+#   Option A — Interactive (local dev):
+#     az login
+#
+#   Option B — Service Principal (CI/CD):
+#     $env:ARM_CLIENT_ID       = "<sp_client_id>"
+#     $env:ARM_CLIENT_SECRET   = "<sp_client_secret>"
+#     $env:ARM_TENANT_ID       = "<tenant_id>"
+#     $env:ARM_SUBSCRIPTION_ID = "<subscription_id>"
+# =============================================================================
+
+# ── Environment ───────────────────────────────────────────────────────────────
+environment = "dev"
+location    = "westeurope"
+
+# ── Bot tuning ────────────────────────────────────────────────────────────────
+# poll_interval_seconds: must be >= 60 to respect Riot Dev Key rate limits
+# With 28 pros: 28 × 2 req = 56 req per cycle — safe under 100 req/2min limit
+poll_interval_seconds = 300
+
+# rate_limit_delay: per-request delay in seconds (0.06 = ~16 req/s, under 20 req/s limit)
+rate_limit_delay = 0.06
+
+# ── Function App ──────────────────────────────────────────────────────────────
+# Y1 = Consumption (pay-per-execution, ~free for low traffic)
+# EP1 = Premium (always warm, no cold starts — recommended for prod)
+function_app_sku = "Y1"
+
+# ── CosmosDB ──────────────────────────────────────────────────────────────────
+# 400 RU/s is the minimum and sufficient for this bot's workload
+# Serverless mode is used — this value is ignored but kept for documentation
+cosmosdb_throughput = 400

@@ -6,7 +6,7 @@
 # For multi-instance or high-throughput, migrate to Azure SQL or Cosmos DB.
 
 resource "azurerm_storage_account" "main" {
-  name                     = "stlolnotifier${var.environment}"  # must be globally unique, lowercase
+  name                     = "stlolnotifier${var.environment}${var.suffix}"  # globally unique, lowercase, max 24 chars
   resource_group_name      = var.resource_group_name
   location                 = var.location
   account_tier             = "Standard"
