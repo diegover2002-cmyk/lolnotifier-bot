@@ -1,0 +1,22 @@
+[run]
+source = .
+omit =
+    tests/*
+    scripts/*
+    functional_test_suite.py
+    main.py
+    logging_setup.py
+    .venv/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    \.\.\.
+
+[html]
+directory = htmlcov
+
+[json]
+output = coverage.json

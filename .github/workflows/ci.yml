@@ -1,0 +1,133 @@
+# .github/workflows/ci.yml
+#
+# Runs on every pull request targeting main or develop.
+# All jobs are NON-BLOCKING for the repo — they report status but
+# branch protection rules are NOT enforced until explicitly configured.
+#
+# Jobs:
+#   lint        → ruff (PEP8 + style)
+#   unit-tests  → pytest with coverage report (no API keys needed)
+#   security    → bandit (Python SAST) + checkov (Terraform IaC)
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+
+  # ── Lint & format ────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Check style
+        run: ruff check . --output-format=github
+
+      - name: Check formatting
+        run: ruff format --check .
+
+  # ── Unit tests + coverage ────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests (78 tests, no API calls)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install "python-telegram-bot==20.7" pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ \
+            --cov=. \
+            --cov-config=.coveragerc \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html:htmlcov \
+            -v --tb=short
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+
+      # Fail if coverage drops below 55% (current baseline: 61%)
+      - name: Coverage gate
+        run: |
+          python -m pytest tests/ \
+            --cov=. \
+            --cov-config=.coveragerc \
+            --cov-fail-under=55 \
+            -q --tb=no
+
+  # ── Security scans ───────────────────────────────────────────────────────────
+  security:
+    name: Security (bandit + checkov)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install scanners
+        run: pip install bandit checkov
+
+      # Python SAST — medium and high severity only
+      - name: Bandit scan
+        run: |
+          bandit -r . \
+            --exclude .venv,tests,scripts \
+            -ll \
+            -f json \
+            -o bandit-report.json || true
+          bandit -r . \
+            --exclude .venv,tests,scripts \
+            -ll
+
+      # Terraform IaC security scan
+      - name: Checkov scan
+        run: |
+          checkov -d terraform/ \
+            --framework terraform \
+            --output cli \
+            --output sarif \
+            --output-file-path . \
+            --soft-fail
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            results_tf.sarif

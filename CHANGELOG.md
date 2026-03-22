@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## [4.0.0] - 2026-03-22
+
+### Release
+- Stable release consolidating all infrastructure, CI/CD, and testing work
+- Git tag: `v4.0.0`
+- **78 unit tests passing** — 0 failures, 0 warnings
+- **Coverage: 61%** on testable modules (100% on `stats.py`, `formatter.py`, `config.py`)
+- Functional test suite: 10 PASS / 0 FAIL / 2 WARN (expected Dev Key 403s)
+
+### CI/CD
+- Added `.github/workflows/ci.yml` — lint (ruff), unit tests + coverage gate (55% floor), security scans (bandit + checkov)
+- Added `.github/workflows/release.yml` — Docker build/push to GHCR, deploy to dev then prod with manual approval gate
+- Both workflows are non-blocking — branch protection rules not enforced until explicitly configured
+
+### Testing & Coverage
+- Added `.coveragerc` — excludes `main.py`, `logging_setup.py`, `functional_test_suite.py`, `scripts/`
+- Added `pytest-cov==6.1.0` to `requirements.txt`
+- Added `docs/coverage-report.md` — per-module breakdown with gap analysis and improvement roadmap
+- Coverage by module: `stats.py` 100%, `formatter.py` 99%, `config.py` 100%, `poller.py` 62%, `riot_api.py` 61%, `handlers.py` 46%, `database.py` 27%
+
+### Infrastructure
+- Terraform modules complete: `keyvault/`, `cosmosdb/`, `function_app/`, `scheduler/`, `storage/`, `monitoring/`, `container_app/`
+- `terraform/scripts/bootstrap-backend.sh` — one-time remote state setup
+- `terraform/terraform.tfvars.example` — safe example with no secrets
+- `docs/terraform-deployment-guide.md` — 10-step deploy guide with troubleshooting table
+
+### Dev Key compliance
+- All endpoints used: `account/v1` ✔, `match/v5` ✔
+- Blocked endpoints return `None` gracefully — no retries on 401/403
+- `poll_interval_seconds >= 60` enforced by Terraform variable validation
+- Dev Key rotation: `az keyvault secret set` — no Terraform re-apply needed
+
+---
+
 ## [3.0.0] - 2026-03-22
 
 ### Release
