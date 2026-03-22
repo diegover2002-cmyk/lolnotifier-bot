@@ -1,0 +1,16 @@
+# terraform/environments/dev/terraform.tfvars.example
+# Copy to terraform.tfvars and fill in real values.
+# terraform.tfvars is excluded by .gitignore — NEVER commit it.
+
+environment      = "dev"
+location         = "westeurope"
+
+# Secrets — pass via environment variables instead of this file:
+#   export TF_VAR_telegram_token="<your_token>"
+#   export TF_VAR_riot_api_key="<your_key>"
+#   export TF_VAR_telegram_chat_id="<your_chat_id>"
+#
+# Or use Azure Key Vault + managed identity (recommended for prod).
+telegram_token   = "<your_telegram_token>"
+riot_api_key     = "<your_riot_api_key>"
+telegram_chat_id = "<your_telegram_chat_id>"

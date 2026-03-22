@@ -1,5 +1,42 @@
 # CHANGELOG
 
+## [3.0.0] - 2026-03-22
+
+### Release
+- First stable production-ready release
+- Git tag: `v3.0.0`
+- All 78 unit tests passing (0 failures)
+- Functional test suite: 10 PASS / 0 FAIL / 2 WARN (expected Dev Key 403s)
+
+### Documentation
+- Full README rewrite: badges, setup guide, command table, example Telegram output, architecture map
+- Added `CONTRIBUTING.md`: pro player workflow, test guidelines, code style, PR checklist
+- Added `SECURITY.md`: secrets policy, logging policy, Dev Key safe usage, incident response
+- Added `docs/` wiki folder: architecture, data model, dev-key-constraints, message-templates, test-coverage, future-improvements
+- Added `pyproject.toml` with project metadata and tool configuration
+
+### Infrastructure
+- Dockerfile upgraded to Python 3.11-slim, non-root user, selective COPY
+- docker-compose.yml updated to named volumes (no bind-mount DB)
+- `.gitignore` extended with Terraform state files and `.tfvars`
+- Added `terraform/` module structure for Azure deployment (conceptual)
+- Added `docs/azure-deployment.md`: full Terraform + Azure architecture guide
+- Added `docs/cicd-workflow.md`: conceptual CI/CD pipeline definition
+- Added `docs/release-plan.md`: step-by-step release and migration checklist
+
+### Security
+- Dockerfile runs as non-root `botuser`
+- `riot_account.py` replaced `print()` with `logging` — no PII in stdout
+- `config.py` module docstring added
+- All secrets excluded from repo (verified via `.gitignore` audit)
+
+### Dev Key compliance
+- All polling uses only `account/v1` and `match/v5`
+- 403-guarded endpoints (`summoner/v4`, `league/v4`, `spectator/v5`) return `None` gracefully
+- No retries on 401/403 — prevents rate limit waste on expired keys
+
+---
+
 ## [2.1.0] - 2026-03-22
 
 ### New features

@@ -4,7 +4,11 @@ services:
     env_file:
       - .env
     volumes:
-      - ./lolnotifier.db:/app/lolnotifier.db
-      - ./logs:/app/logs
+      - lolnotifier_data:/app/data
+      - lolnotifier_logs:/app/logs
     restart: unless-stopped
     command: python main.py
+
+volumes:
+  lolnotifier_data:
+  lolnotifier_logs:

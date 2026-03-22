@@ -23,6 +23,14 @@ build/
 logs/
 *.log
 
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
 # OS
 .DS_Store
 Thumbs.db
