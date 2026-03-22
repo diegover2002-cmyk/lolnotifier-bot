@@ -31,7 +31,7 @@ resource "azurerm_cosmosdb_account" "main" {
 
   # Single-region for dev/prod (add failover_priority = 1 region for HA)
   geo_location {
-    location          = var.location
+    location          = "northeurope"
     failover_priority = 0
   }
 
