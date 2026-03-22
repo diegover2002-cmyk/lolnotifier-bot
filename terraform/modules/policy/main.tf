@@ -56,12 +56,12 @@ resource "azurerm_policy_set_definition" "mcsb_lolnotifier" {
   }
 
   # MCSB NS-2: Key Vault should use private link / restrict network access
-  # NOTE: Audit only — exception EXC-001 applies (CI runners need public access)
+  # NOTE: AuditIfNotExists only — exception EXC-001 applies (CI runners need public access)
   policy_definition_reference {
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/a6fb4358-5bf4-4ad7-ba82-2cd2f41ce5e9"
     reference_id         = "kv-private-endpoint"
     parameter_values = jsonencode({
-      effect = { value = "Audit" }
+      effect = { value = "AuditIfNotExists" }
     })
   }
 
@@ -143,7 +143,7 @@ resource "azurerm_policy_set_definition" "mcsb_lolnotifier" {
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/0da106f2-4ca3-48e8-bc85-c638fe6aea8f"
     reference_id         = "func-managed-identity"
     parameter_values = jsonencode({
-      effect = { value = "Audit" }
+      effect = { value = "AuditIfNotExists" }
     })
   }
 
