@@ -2,12 +2,23 @@
 # Azure Application Insights for bot telemetry, error tracking, and log queries.
 # The bot reads APPLICATIONINSIGHTS_CONNECTION_STRING from env to emit traces.
 
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = "log-lolnotifier-${var.environment}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = var.tags
+}
+
 resource "azurerm_application_insights" "main" {
   name                = "appi-lolnotifier-${var.environment}"
   location            = var.location
   resource_group_name = var.resource_group_name
   application_type    = "other"
   retention_in_days   = 30
+  workspace_id        = azurerm_log_analytics_workspace.main.id
 
   tags = var.tags
 }
