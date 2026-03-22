@@ -4,8 +4,11 @@
 # Builds the Docker image, pushes to GitHub Container Registry,
 # and updates the Azure Container App image.
 #
-# Required GitHub secrets:
-#   AZURE_CREDENTIALS  → output of: az ad sp create-for-rbac --sdk-auth
+# Required GitHub secrets (Settings → Secrets → Actions):
+#   ARM_CLIENT_ID       → App Registration client ID
+#   ARM_CLIENT_SECRET   → App Registration client secret
+#   ARM_TENANT_ID       → Azure AD tenant ID
+#   ARM_SUBSCRIPTION_ID → Azure subscription ID
 #
 # Secrets NOT stored in GitHub (managed in Azure Key Vault):
 #   TELEGRAM_TOKEN, RIOT_API_KEY, TELEGRAM_CHAT_ID
@@ -70,9 +73,12 @@ jobs:
     environment: dev
 
     steps:
-      - uses: azure/login@v1
+      - uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       - name: Update Container App image
         run: |
@@ -94,12 +100,15 @@ jobs:
     name: Deploy → Prod
     needs: deploy-dev
     runs-on: ubuntu-latest
-    environment: prod   # Configure protection rules + required reviewers in GitHub Settings
+    environment: prod
 
     steps:
-      - uses: azure/login@v1
+      - uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.ARM_CLIENT_SECRET }}
 
       - name: Update Container App image
         run: |
