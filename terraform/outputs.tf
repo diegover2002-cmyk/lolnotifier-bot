@@ -29,8 +29,8 @@ output "cosmosdb_endpoint" {
 }
 
 output "appinsights_app_id" {
-  description = "Application Insights app ID — use for KQL queries in Azure Portal"
-  value       = module.monitoring.app_id
+  description = "Application Insights workspace ID"
+  value       = module.monitoring.log_analytics_workspace_id
 }
 
 # Sensitive outputs — only shown with: terraform output -json
