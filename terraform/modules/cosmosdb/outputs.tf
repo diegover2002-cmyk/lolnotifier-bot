@@ -15,7 +15,7 @@ output "database_name" {
 
 output "primary_connection_string" {
   description = "Primary connection string — injected into Function App as app setting via Key Vault reference"
-  value       = azurerm_cosmosdb_account.main.connection_strings[0]
+  value       = azurerm_cosmosdb_account.main.primary_sql_connection_string
   sensitive   = true
 }
 

@@ -65,7 +65,7 @@ resource "azurerm_cosmosdb_sql_container" "users" {
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.main.name
   database_name       = azurerm_cosmosdb_sql_database.lolnotifier.name
-  partition_key_path  = "/user_id"
+  partition_key_paths = ["/user_id"]
 
   indexing_policy {
     indexing_mode = "consistent"
@@ -80,7 +80,7 @@ resource "azurerm_cosmosdb_sql_container" "pro_players" {
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.main.name
   database_name       = azurerm_cosmosdb_sql_database.lolnotifier.name
-  partition_key_path  = "/region"
+  partition_key_paths = ["/region"]
 
   indexing_policy {
     indexing_mode = "consistent"
@@ -95,7 +95,7 @@ resource "azurerm_cosmosdb_sql_container" "match_history" {
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.main.name
   database_name       = azurerm_cosmosdb_sql_database.lolnotifier.name
-  partition_key_path  = "/puuid"
+  partition_key_paths = ["/puuid"]
 
   # TTL: auto-expire match records after 90 days to control storage costs
   default_ttl = 7776000  # 90 days in seconds

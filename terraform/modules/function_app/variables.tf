@@ -12,10 +12,20 @@ variable "riot_api_key_secret_id"       { type = string }
 variable "cosmosdb_kv_secret_id"        { type = string }
 
 variable "storage_account_name"         { type = string }
-variable "storage_account_access_key"   { type = string; sensitive = true }
+variable "storage_account_access_key" {
+  type      = string
+  sensitive = true
+}
 
-variable "appinsights_connection_string"   { type = string; sensitive = true }
-variable "appinsights_instrumentation_key" { type = string; sensitive = true }
+variable "appinsights_connection_string" {
+  type      = string
+  sensitive = true
+}
+
+variable "appinsights_instrumentation_key" {
+  type      = string
+  sensitive = true
+}
 
 variable "poll_interval_seconds" {
   type    = number

@@ -54,6 +54,4 @@ resource "azurerm_logic_app_action_http" "call_poll" {
     source    = "scheduler"
     timestamp = "@{utcNow()}"
   })
-
-  run_after {}
 }

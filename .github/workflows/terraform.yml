@@ -1,0 +1,135 @@
+# .github/workflows/terraform.yml
+#
+# Terraform plan on every PR targeting main.
+# Terraform apply on push to main (after merge).
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   ARM_CLIENT_ID       → App Registration client ID
+#   ARM_CLIENT_SECRET   → App Registration client secret
+#   ARM_TENANT_ID       → Azure AD tenant ID
+#   ARM_SUBSCRIPTION_ID → Azure subscription ID
+#   TF_VAR_TELEGRAM_TOKEN    → Telegram bot token
+#   TF_VAR_RIOT_API_KEY      → Riot Games API key
+#   TF_VAR_TELEGRAM_CHAT_ID  → Telegram chat ID
+
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+
+permissions:
+  contents: read
+  pull-requests: write   # allows posting plan output as PR comment
+
+env:
+  TF_VERSION: "1.6.6"
+  TF_WORKING_DIR: lolnotifier/terraform
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+jobs:
+
+  # ── Checkov IaC security scan (non-blocking) ─────────────────────────────────
+  checkov:
+    name: Checkov IaC Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: lolnotifier/terraform
+          framework: terraform
+          soft_fail: true
+          output_format: cli
+          download_external_modules: false
+
+  # ── Terraform plan (PRs) ──────────────────────────────────────────────────────
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: checkov
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_telegram_token: ${{ secrets.TF_VAR_TELEGRAM_TOKEN }}
+          TF_VAR_riot_api_key: ${{ secrets.TF_VAR_RIOT_API_KEY }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TF_VAR_TELEGRAM_CHAT_ID }}
+        run: terraform plan -input=false -no-color -out=tfplan 2>&1 | tee plan.txt
+        continue-on-error: true
+
+      - name: Post plan as PR comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('${{ env.TF_WORKING_DIR }}/plan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.slice(0, 60000) + '\n...(truncated)' : plan;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan\n\`\`\`hcl\n${truncated}\n\`\`\``
+            });
+
+      - name: Fail if plan errored
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  # ── Terraform apply (push to main only) ──────────────────────────────────────
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: checkov
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: dev   # requires manual approval if protection rules are set
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_telegram_token: ${{ secrets.TF_VAR_TELEGRAM_TOKEN }}
+          TF_VAR_riot_api_key: ${{ secrets.TF_VAR_RIOT_API_KEY }}
+          TF_VAR_telegram_chat_id: ${{ secrets.TF_VAR_TELEGRAM_CHAT_ID }}
+        run: terraform apply -input=false -auto-approve
