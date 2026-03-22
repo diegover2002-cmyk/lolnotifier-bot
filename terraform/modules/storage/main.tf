@@ -5,6 +5,8 @@
 # Note: SQLite over Azure File Share (SMB) works for single-instance bots.
 # For multi-instance or high-throughput, migrate to Azure SQL or Cosmos DB.
 
+#checkov:skip=CKV_AZURE_59:EXC-002 Storage network rules omitted — Function App Consumption plan (Y1) uses shared Azure infrastructure without VNet injection support. Access key stored in Key Vault. See docs/compliance/exceptions-registry.json.
+#checkov:skip=CKV_AZURE_35:EXC-002 Same as CKV_AZURE_59 — network ACL Deny would block Function App runtime on Y1 plan.
 resource "azurerm_storage_account" "main" {
   name                     = "stlolnotifier${var.environment}${var.suffix}"
   resource_group_name      = var.resource_group_name

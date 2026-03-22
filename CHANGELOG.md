@@ -1,6 +1,33 @@
 # CHANGELOG
 
-## [5.0.0] - 2026-03-22
+## [5.2.0] - 2026-03-22
+
+### Release
+- MCSB compliance enforcement via Azure Policy initiative + Git-based exception registry
+- Git tag: `v5.2.0`
+
+### Compliance
+- Added `terraform/modules/policy/` — custom MCSB policy initiative with 13 controls assigned to `rg-lolnotifier-dev`
+- Added `docs/compliance/exceptions-registry.json` — structured exception registry with 7 registered exceptions (full metadata: justification, compensating controls, expiry, risk level)
+- Added `docs/compliance/mcsb-posture.md` — full audit-ready compliance posture report
+- Added `.github/workflows/compliance-report.yml` — weekly + on-push compliance report posted to GitHub Step Summary
+- Added `checkov:skip` annotations with exception IDs to all non-compliant Terraform resources
+
+### Exception summary
+- EXC-001: Key Vault network ACL (CI/CD runner constraint, low risk, expires 2026-06-22)
+- EXC-002: Storage network rules (Y1 Consumption plan, low risk)
+- EXC-003: CosmosDB public access (serverless tier, medium risk)
+- EXC-004: CosmosDB local auth (connection string, low risk, remediation tracked)
+- EXC-005: CosmosDB CMK (non-sensitive data, low risk)
+- EXC-006: Function App public network (Y1 plan, low risk)
+- EXC-007: App Service Plan zone redundancy (Y1 plan, info)
+
+### Dev Key compliance
+- No new endpoints introduced
+- All constraints from v5.1.0 maintained
+
+---
+
 
 ### Release
 - Professional CI/CD workflow with PR-based Terraform management

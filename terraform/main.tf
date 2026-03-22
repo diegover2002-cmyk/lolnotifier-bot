@@ -158,6 +158,12 @@ module "function_app" {
   sku_name              = var.function_app_sku
 }
 
+module "policy" {
+  source            = "./modules/policy"
+  environment       = var.environment
+  resource_group_id = azurerm_resource_group.main.id
+}
+
 module "scheduler" {
   source              = "./modules/scheduler"
   resource_group_name = azurerm_resource_group.main.name
@@ -177,7 +183,7 @@ locals {
   common_tags = {
     project     = "lolnotifier-bot"
     environment = var.environment
-    version     = "5.0.0"
+    version     = "5.2.0"
     managed_by  = "terraform"
   }
 }

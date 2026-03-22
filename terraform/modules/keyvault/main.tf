@@ -18,6 +18,8 @@
 
 data "azurerm_client_config" "current" {}
 
+#checkov:skip=CKV_AZURE_109:EXC-001 Key Vault network firewall set to Allow — GitHub Actions runners use dynamic IPs incompatible with IP allowlist. Mitigated by RBAC-only authorization. See docs/compliance/exceptions-registry.json.
+#checkov:skip=CKV_AZURE_189:EXC-001 Same as CKV_AZURE_109 — public network access required for CI/CD pipeline. Tracked exception with expiry 2026-06-22.
 resource "azurerm_key_vault" "main" {
   name                = "kv-lolnotifier-${var.environment}-${var.suffix}"
   location            = var.location
