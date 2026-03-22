@@ -57,6 +57,8 @@ terraform {
 # No credentials are ever written in this file.
 # -----------------------------------------------------------------------------
 provider "azurerm" {
+  subscription_id = var.subscription_id
+
   features {
     key_vault {
       # Keep soft-deleted vaults recoverable — prevents accidental permanent loss
