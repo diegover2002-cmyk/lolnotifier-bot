@@ -1,3 +1,7 @@
+"""
+Configuration — loads all settings from environment variables via .env.
+Never import secrets directly; always use the constants defined here.
+"""
 import os
 from dotenv import load_dotenv
 
