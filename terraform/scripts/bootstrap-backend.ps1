@@ -54,9 +54,9 @@ az storage account create `
     --min-tls-version TLS1_2 `
     --https-only true `
     --allow-blob-public-access false `
-    --default-action Deny `
-    --bypass AzureServices `
     --output none
+# Note: defaultAction=Allow is required — GitHub Actions runners use dynamic IPs.
+# Security is enforced via AAD authentication (SP) + TLS1_2 + no public blob access.
 
 # 3. Enable blob versioning
 Write-Host "==> Enabling blob versioning..."
