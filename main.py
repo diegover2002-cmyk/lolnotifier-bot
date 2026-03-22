@@ -2,6 +2,7 @@
 Bot entry point.
 Starts the Telegram application and background pollers.
 """
+
 from __future__ import annotations
 
 import asyncio

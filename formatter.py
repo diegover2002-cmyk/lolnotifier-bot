@@ -3,6 +3,7 @@ Telegram message formatter.
 Produces clean, emoji-rich messages from Riot API data.
 All functions are pure (no I/O).
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,7 +20,7 @@ QUEUE_LABELS: dict[int, str] = {
     1020: "One for All",
     1300: "Nexus Blitz",
     1400: "Ultimate Spellbook",
-    0:   "Custom",
+    0: "Custom",
 }
 
 ROLE_EMOJI: dict[str, str] = {
@@ -75,7 +76,7 @@ def format_match_summary(
     lines = [
         f"{header}",
         f"{result_emoji} {result_text} — {champion}",
-        f"",
+        "",
         f"👤 {player_name}",
         f"⚔️  KDA: {kda}  (ratio {kda_r})",
         f"🎯 Modo: {queue}",
@@ -102,7 +103,7 @@ def format_match_summary_with_stats(
     vision = full_participant.get("visionScore", 0)
 
     extras = [
-        f"",
+        "",
         f"🌾 CS: {cs}   💰 Oro: {gold:,}",
         f"💥 Daño: {dmg:,}   👁️  Visión: {vision}",
     ]
@@ -117,12 +118,7 @@ def format_new_match_detected(
 ) -> str:
     """Notification that a new completed match was detected."""
     header = f"🌟 PRO · {pro_team}" if pro_team else "🎮 Nueva partida"
-    return (
-        f"{header}\n"
-        f"👤 {player_name}\n"
-        f"📋 Partida detectada: {match_id}\n"
-        f"⏳ Procesando resultados..."
-    )
+    return f"{header}\n👤 {player_name}\n📋 Partida detectada: {match_id}\n⏳ Procesando resultados..."
 
 
 def format_pro_list(pros: list[dict[str, Any]]) -> str:
@@ -177,19 +173,18 @@ def format_aggregated_stats(
     lines = [
         f"{header} {role_e}",
         f"👤 {player_name}",
-        f"",
-        f"🎮 Partidas: {agg.get('games', 0)}  "
-        f"({agg.get('wins', 0)}V / {agg.get('losses', 0)}D)",
+        "",
+        f"🎮 Partidas: {agg.get('games', 0)}  ({agg.get('wins', 0)}V / {agg.get('losses', 0)}D)",
         f"{wr_emoji} Winrate: {wr}%",
         f"⚔️  KDA medio: {agg.get('avg_kills', 0)}/{agg.get('avg_deaths', 0)}/{agg.get('avg_assists', 0)}"
         f"  (ratio {agg.get('avg_kda_ratio', 0)})",
         f"🏆 Campeón más jugado: {champ}",
-        f"",
+        "",
         f"🌾 CS/min: {agg.get('avg_cs_per_min', 0)}",
         f"💰 Oro medio: {int(agg.get('avg_gold', 0)):,}",
         f"💥 Daño medio: {int(agg.get('avg_damage', 0)):,}",
         f"👁️  Visión media: {agg.get('avg_vision', 0)}",
-        f"",
+        "",
         f"⭐ Performance score: {perf}/100",
     ]
     if agg.get("total_penta_kills", 0):

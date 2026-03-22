@@ -4,6 +4,7 @@ Sources: official team rosters, Leaguepedia, op.gg pro tracker (public data).
 Only includes players with publicly known Riot IDs.
 All entries verified against account/v1 endpoint compatibility.
 """
+
 from __future__ import annotations
 
 from typing import TypedDict

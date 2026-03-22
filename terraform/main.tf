@@ -177,7 +177,7 @@ locals {
   common_tags = {
     project     = "lolnotifier-bot"
     environment = var.environment
-    version     = "3.0.0"
+    version     = "5.0.0"
     managed_by  = "terraform"
   }
 }
