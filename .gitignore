@@ -23,6 +23,11 @@ build/
 logs/
 *.log
 
+# Coverage
+.coverage
+coverage.json
+htmlcov/
+
 # Terraform
 **/.terraform/
 *.tfstate
