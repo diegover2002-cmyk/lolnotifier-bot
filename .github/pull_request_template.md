@@ -4,8 +4,6 @@
 
 ## Changes
 
-<!-- List files/modules changed and what was updated -->
-
 - [ ] Terraform module(s) updated
 - [ ] GitHub Actions workflow(s) updated
 - [ ] Application code updated
@@ -16,25 +14,18 @@
 
 | Module | Previous | New |
 |---|---|---|
-| <!-- e.g. function_app --> | <!-- e.g. 1.0.0 --> | <!-- e.g. 1.1.0 --> |
+| <!-- e.g. function_app --> | <!-- v1.0.0 --> | <!-- v1.1.0 --> |
 
-## Tests Performed
+---
 
-- [ ] `terraform fmt -check` passed
-- [ ] `terraform validate` passed
-- [ ] `python -m pytest tests/ -v` — all unit tests pass
-- [ ] Functional tests run manually (if applicable)
+## 🤖 Automated CI Summary
 
-## Checkov Scan Results
+> _This section is updated automatically by the CI bot on every push to this PR._
+> _Do not edit manually._
 
-<!-- Paste summary from CI or run locally: checkov -d terraform/ --framework terraform -->
+<!-- CI_REPORT_PLACEHOLDER -->
 
-```
-Passed checks: X
-Failed checks: Y (list any new failures below)
-```
-
-**New failures introduced:** <!-- none / list with justification -->
+---
 
 ## Security & Dev Key Compliance
 
