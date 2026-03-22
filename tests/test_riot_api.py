@@ -5,8 +5,6 @@ All HTTP calls are mocked — no real API requests are made.
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import aiohttp
-
 from riot_api import get_match_history_ids, get_match_info, parse_match_for_puuid
 
 

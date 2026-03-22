@@ -2,7 +2,6 @@
 Unit tests for formatter.py.
 All functions are pure (no I/O) so no mocks are needed.
 """
-import pytest
 from formatter import (
     _duration,
     _kda_ratio,
@@ -14,7 +13,6 @@ from formatter import (
     format_status,
     format_pro_list,
     format_help,
-    QUEUE_LABELS,
 )
 
 

@@ -2,7 +2,6 @@
 Unit tests for stats.py.
 All functions are pure (no I/O) so no mocks are needed.
 """
-import pytest
 from stats import extract_match_stats, extract_participant, aggregate_stats, rank_players
 
 

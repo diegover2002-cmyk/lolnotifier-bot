@@ -99,19 +99,17 @@ jobs:
       - name: Install scanners
         run: pip install bandit checkov
 
-      # Python SAST — medium and high severity only
+      # Python SAST — medium and high severity only, excludes legacy scripts/
       - name: Bandit scan
         run: |
           bandit -r . \
-            --exclude .venv,tests,scripts \
+            --exclude ./.venv,./tests,./scripts \
             -ll \
             -f json \
             -o bandit-report.json || true
           bandit -r . \
-            --exclude .venv,tests,scripts \
+            --exclude ./.venv,./tests,./scripts \
             -ll
-
-      # Terraform IaC security scan
       - name: Checkov scan
         run: |
           checkov -d terraform/ \

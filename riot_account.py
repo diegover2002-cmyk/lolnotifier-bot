@@ -16,7 +16,7 @@ from urllib.parse import quote
 import aiohttp
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import ACCOUNT_CLUSTERS, RIOT_API_KEY
+from config import RIOT_API_KEY
 
 logger = logging.getLogger(__name__)
 
