@@ -40,7 +40,9 @@ where = ["."]
 include = ["*.py"]
 
 [tool.ruff]
-exclude = ["scripts/", "tests/functional/"]
+exclude = ["scripts/", "tests/functional/", "functional_test_suite.py"]
+line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W"]
+ignore = ["E501"]
