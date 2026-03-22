@@ -126,7 +126,16 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init
-        run: cd terraform && terraform init -input=false
+        run: |
+          cd terraform && terraform init -input=false \
+            -backend-config="resource_group_name=rg-lolnotifier-tfstate" \
+            -backend-config="storage_account_name=stlolnotifiertfstate" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=lolnotifier.tfstate" \
+            -backend-config="subscription_id=$ARM_SUBSCRIPTION_ID" \
+            -backend-config="tenant_id=$ARM_TENANT_ID" \
+            -backend-config="client_id=$ARM_CLIENT_ID" \
+            -backend-config="client_secret=$ARM_CLIENT_SECRET"
 
       - name: Terraform Apply
         env:
