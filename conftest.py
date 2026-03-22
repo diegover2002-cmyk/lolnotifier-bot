@@ -3,6 +3,7 @@ pytest configuration — adds the project root to sys.path so that
 all modules (config, riot_api, stats, formatter, …) are importable
 without a package install step.
 """
+
 import sys
 from pathlib import Path
 

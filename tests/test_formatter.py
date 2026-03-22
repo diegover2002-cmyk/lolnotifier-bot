@@ -2,7 +2,7 @@
 Unit tests for formatter.py.
 All functions are pure (no I/O) so no mocks are needed.
 """
-import pytest
+
 from formatter import (
     _duration,
     _kda_ratio,
@@ -14,11 +14,11 @@ from formatter import (
     format_status,
     format_pro_list,
     format_help,
-    QUEUE_LABELS,
 )
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def test_duration_zero():
     assert _duration(0) == "?"
@@ -62,7 +62,9 @@ def test_queue_label_none():
 
 PARSED = {
     "champion": "Graves",
-    "kills": 10, "deaths": 8, "assists": 6,
+    "kills": 10,
+    "deaths": 8,
+    "assists": 6,
     "kda": "10/8/6",
     "win": False,
     "queue_id": 420,
@@ -147,11 +149,19 @@ def test_format_match_summary_with_stats_contains_vision():
 # ── format_aggregated_stats ───────────────────────────────────────────────────
 
 AGG = {
-    "games": 5, "wins": 3, "losses": 2, "winrate": 60.0,
+    "games": 5,
+    "wins": 3,
+    "losses": 2,
+    "winrate": 60.0,
     "avg_kda_ratio": 3.5,
-    "avg_kills": 6.0, "avg_deaths": 3.0, "avg_assists": 8.0,
-    "avg_cs": 180.0, "avg_cs_per_min": 6.0,
-    "avg_gold": 13000.0, "avg_damage": 22000.0, "avg_vision": 28.0,
+    "avg_kills": 6.0,
+    "avg_deaths": 3.0,
+    "avg_assists": 8.0,
+    "avg_cs": 180.0,
+    "avg_cs_per_min": 6.0,
+    "avg_gold": 13000.0,
+    "avg_damage": 22000.0,
+    "avg_vision": 28.0,
     "most_played_champion": "Orianna",
     "performance_score": 55.0,
     "total_penta_kills": 1,
@@ -187,6 +197,7 @@ def test_format_aggregated_stats_pro_header():
 
 # ── format_player_ranking ─────────────────────────────────────────────────────
 
+
 def test_format_player_ranking_order():
     ranking = [(1, "Faker", 80.0), (2, "Caps", 65.0), (3, "Bjergsen", 50.0)]
     msg = format_player_ranking(ranking)
@@ -202,9 +213,12 @@ def test_format_player_ranking_empty():
 
 # ── format_status ─────────────────────────────────────────────────────────────
 
+
 def test_format_status_with_tag():
     user = {
-        "game_name": "LaBísica", "tag_line": "EUW", "region": "euw1",
+        "game_name": "LaBísica",
+        "tag_line": "EUW",
+        "region": "euw1",
         "notifications_enabled": True,
         "last_poll_time": "2026-03-22 01:00:00",
         "last_match_id": "EUW1_999",
@@ -217,15 +231,19 @@ def test_format_status_with_tag():
 
 def test_format_status_notifications_paused():
     user = {
-        "game_name": "Test", "tag_line": "NA1", "region": "na1",
+        "game_name": "Test",
+        "tag_line": "NA1",
+        "region": "na1",
         "notifications_enabled": False,
-        "last_poll_time": None, "last_match_id": None,
+        "last_poll_time": None,
+        "last_match_id": None,
     }
     msg = format_status(user)
     assert "pausadas" in msg
 
 
 # ── format_pro_list ───────────────────────────────────────────────────────────
+
 
 def test_format_pro_list_empty():
     msg = format_pro_list([])
@@ -244,6 +262,7 @@ def test_format_pro_list_shows_players():
 
 
 # ── format_help ───────────────────────────────────────────────────────────────
+
 
 def test_format_help_contains_commands():
     msg = format_help()

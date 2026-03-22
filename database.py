@@ -4,6 +4,7 @@ Schema v2 adds: game_name, tag_line, puuid to users and pro_players.
 Pro players also get team and role columns.
 Migration runs automatically on init_db().
 """
+
 from __future__ import annotations
 
 import aiosqlite
@@ -71,23 +72,42 @@ async def init_db(db_path: str) -> None:
 
 # ── Row helpers ───────────────────────────────────────────────────────────────
 
+
 def _user_row(row: tuple) -> dict[str, Any]:
     keys = [
-        "user_id", "summoner_name", "game_name", "tag_line", "puuid",
-        "region", "notifications_enabled", "last_match_id", "last_poll_time", "created_at",
+        "user_id",
+        "summoner_name",
+        "game_name",
+        "tag_line",
+        "puuid",
+        "region",
+        "notifications_enabled",
+        "last_match_id",
+        "last_poll_time",
+        "created_at",
     ]
     return dict(zip(keys, row))
 
 
 def _pro_row(row: tuple) -> dict[str, Any]:
     keys = [
-        "id", "summoner_name", "game_name", "tag_line", "puuid",
-        "region", "team", "role", "last_match_id", "last_poll_time", "created_at",
+        "id",
+        "summoner_name",
+        "game_name",
+        "tag_line",
+        "puuid",
+        "region",
+        "team",
+        "role",
+        "last_match_id",
+        "last_poll_time",
+        "created_at",
     ]
     return dict(zip(keys, row))
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
+
 
 async def get_user(db_path: str, user_id: int) -> Optional[dict[str, Any]]:
     async with aiosqlite.connect(db_path) as db:
@@ -134,17 +154,13 @@ async def update_user_puuid(db_path: str, user_id: int, puuid: str) -> None:
 
 async def update_last_match_id(db_path: str, user_id: int, match_id: str) -> None:
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "UPDATE users SET last_match_id = ? WHERE user_id = ?", (match_id, user_id)
-        )
+        await db.execute("UPDATE users SET last_match_id = ? WHERE user_id = ?", (match_id, user_id))
         await db.commit()
 
 
 async def toggle_notifications(db_path: str, user_id: int, enabled: bool) -> None:
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "UPDATE users SET notifications_enabled = ? WHERE user_id = ?", (enabled, user_id)
-        )
+        await db.execute("UPDATE users SET notifications_enabled = ? WHERE user_id = ?", (enabled, user_id))
         await db.commit()
 
 
@@ -160,21 +176,18 @@ async def get_all_users(db_path: str) -> list[dict[str, Any]]:
 
 async def get_all_user_ids(db_path: str) -> list[int]:
     async with aiosqlite.connect(db_path) as db:
-        async with db.execute(
-            "SELECT DISTINCT user_id FROM users WHERE notifications_enabled = 1"
-        ) as cur:
+        async with db.execute("SELECT DISTINCT user_id FROM users WHERE notifications_enabled = 1") as cur:
             return [r[0] for r in await cur.fetchall()]
 
 
 async def update_user_last_poll_time(db_path: str, user_id: int, poll_time: str) -> None:
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "UPDATE users SET last_poll_time = ? WHERE user_id = ?", (poll_time, user_id)
-        )
+        await db.execute("UPDATE users SET last_poll_time = ? WHERE user_id = ?", (poll_time, user_id))
         await db.commit()
 
 
 # ── Pro players ───────────────────────────────────────────────────────────────
+
 
 async def get_all_pros(db_path: str) -> list[dict[str, Any]]:
     async with aiosqlite.connect(db_path) as db:
@@ -242,15 +255,11 @@ async def update_pro_puuid(db_path: str, pro_id: int, puuid: str) -> None:
 
 async def update_pro_last_match_id(db_path: str, pro_id: int, match_id: Optional[str]) -> None:
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "UPDATE pro_players SET last_match_id = ? WHERE id = ?", (match_id, pro_id)
-        )
+        await db.execute("UPDATE pro_players SET last_match_id = ? WHERE id = ?", (match_id, pro_id))
         await db.commit()
 
 
 async def update_pro_last_poll_time(db_path: str, pro_id: int, poll_time: str) -> None:
     async with aiosqlite.connect(db_path) as db:
-        await db.execute(
-            "UPDATE pro_players SET last_poll_time = ? WHERE id = ?", (poll_time, pro_id)
-        )
+        await db.execute("UPDATE pro_players SET last_poll_time = ? WHERE id = ?", (poll_time, pro_id))
         await db.commit()

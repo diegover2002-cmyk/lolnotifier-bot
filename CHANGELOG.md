@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [5.0.0] - 2026-03-22
+
+### Release
+- Professional CI/CD workflow with PR-based Terraform management
+- Git tag: `v5.0.0`
+- Feature branch workflow: `feature/*` → `develop` → `main`
+
+### CI/CD
+- Added `.github/workflows/terraform-pr.yml` — PR-only pipeline: `terraform fmt -check` → `terraform validate` → Checkov scan → `terraform plan` (posts diff as PR comment, never applies)
+- Added `.github/pull_request_template.md` — structured PR template with Checkov results section, Dev Key compliance checklist, Terraform safety checklist
+- `terraform.yml` remains the apply-only workflow (push to `main` only)
+- `ci.yml` updated header to reflect terraform fmt coverage
+
+### Workflow Architecture
+- PRs to `develop` or `main` touching `terraform/**`: runs `terraform-pr.yml` (fmt + validate + checkov + plan)
+- Push to `main`: runs `terraform.yml` (checkov + apply)
+- Push to `develop` / PR to `develop`: runs `ci.yml` (lint + unit tests + security)
+- Tag `v*.*.*`: runs `release.yml` (package + deploy to Function App dev → prod)
+
+### Dev Key compliance
+- No new endpoints introduced
+- All constraints from v4.0.0 maintained
+
+---
+
 ## [4.0.0] - 2026-03-22
 
 ### Release
