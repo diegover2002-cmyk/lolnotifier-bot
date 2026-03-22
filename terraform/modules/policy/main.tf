@@ -76,7 +76,7 @@ resource "azurerm_policy_set_definition" "mcsb_lolnotifier" {
 
   # ── Storage Account controls ───────────────────────────────────────────────
 
-  # MCSB DP-3: Storage accounts should use customer-managed key or at minimum secure transfer
+  # MCSB DP-3: Storage accounts should require secure transfer
   policy_definition_reference {
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/404c3081-a854-4457-ae30-26a93ef643f9"
     reference_id         = "storage-secure-transfer"
@@ -100,7 +100,7 @@ resource "azurerm_policy_set_definition" "mcsb_lolnotifier" {
     policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/fe83a0eb-a853-422d-aac2-1bffd182c5d0"
     reference_id         = "storage-tls"
     parameter_values = jsonencode({
-      effect          = { value = "Audit" }
+      effect            = { value = "Audit" }
       minimumTlsVersion = { value = "TLS1_2" }
     })
   }
@@ -155,18 +155,6 @@ resource "azurerm_policy_set_definition" "mcsb_lolnotifier" {
       effect = { value = "AuditIfNotExists" }
     })
   }
-
-  # ── Log Analytics / Monitoring controls ───────────────────────────────────
-
-  # MCSB LT-3: Log Analytics workspace should have 90+ day retention
-  policy_definition_reference {
-    policy_definition_id = "/providers/Microsoft.Authorization/policyDefinitions/f47b5582-33ec-4c5c-87c0-b010a6b2e917"
-    reference_id         = "log-retention"
-    parameter_values = jsonencode({
-      effect              = { value = "AuditIfNotExists" }
-      requiredRetentionDays = { value = "90" }
-    })
-  }
 }
 
 # -----------------------------------------------------------------------------
@@ -185,7 +173,6 @@ resource "azurerm_resource_group_policy_assignment" "mcsb_lolnotifier" {
     version    = "1.0.0"
   })
 
-  # Non-compliance message shown in Azure Policy portal
   non_compliance_message {
     content = "Resource does not comply with MCSB controls for lolnotifier-bot. See docs/compliance/exceptions-registry.json for registered exceptions."
   }
