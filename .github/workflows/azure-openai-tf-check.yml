@@ -31,6 +31,24 @@ jobs:
           echo "files=${FILES}" >> $GITHUB_OUTPUT
           echo "Changed gold-tier files: '${FILES}'"
 
+      # ── Layer 1: tfsec static scan ─────────────────────────────────────────
+      - name: Install tfsec
+        if: steps.changed.outputs.files != ''
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh \
+            | bash
+
+      - name: Run tfsec on gold-tier modules
+        if: steps.changed.outputs.files != ''
+        run: |
+          tfsec terraform/modules/ \
+            --include-passed \
+            --format json \
+            --out tfsec-output.json \
+            --soft-fail
+        continue-on-error: true
+
+      # ── Layer 2: AI semantic scan + exception gate ─────────────────────────
       - name: Set up Python
         if: steps.changed.outputs.files != ''
         uses: actions/setup-python@v5
@@ -42,12 +60,14 @@ jobs:
         run: pip install requests
 
       - name: Run AI Security Check
+        id: sast
         if: steps.changed.outputs.files != ''
         env:
           AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
         run: |
           python .github/scripts/azure_openai_tf_check.py \
             --changed-files ${{ steps.changed.outputs.files }} \
+            --tfsec-output tfsec-output.json \
             --output security_check_output.txt
 
       - name: No gold-tier changes detected
@@ -56,7 +76,9 @@ jobs:
           echo "No gold-tier Terraform changes detected — skipping AI check." \
             > security_check_output.txt
 
+      # ── Post unified report as PR comment ──────────────────────────────────
       - name: Post result as PR comment
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
