@@ -35,6 +35,7 @@
 | **Applies** | Yes — all non-private AKS clusters |
 | **Justification** | The Kubernetes API server is the control plane entry point. Without IP restrictions, it is reachable from the entire internet, exposing it to credential brute-force and exploit attempts |
 | **Checkov** | `CKV_AZURE_6` |
+| **tfsec** | `azure-container-service-api-server-authorized-ip-ranges` |
 
 ```hcl
 # Insecure — API server open to internet
@@ -146,6 +147,7 @@ resource "azurerm_kubernetes_cluster" "good" {
 | **Applies** | Yes — all AKS clusters |
 | **Justification** | Without RBAC, all authenticated users have unrestricted access to all Kubernetes resources. RBAC enforces least-privilege access at the namespace and resource level |
 | **Checkov** | `CKV_AZURE_5` |
+| **tfsec** | `azure-container-service-cluster-rbac-enabled` |
 
 ```hcl
 # Insecure
@@ -176,6 +178,7 @@ resource "azurerm_kubernetes_cluster" "good" {
 | **Applies** | Yes — all AKS clusters |
 | **Justification** | Without network policy, all pods can communicate with all other pods across all namespaces. Network policy enforces microsegmentation at the pod level, limiting lateral movement |
 | **Checkov** | `CKV_AZURE_7` |
+| **tfsec** | `azure-container-service-network-policy-enabled` |
 
 ```hcl
 # Insecure — no network policy

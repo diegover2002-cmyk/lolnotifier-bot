@@ -1,7 +1,7 @@
 # MCSB Control Matrix — Deployable Azure Services
 
 > **Purpose:** Maps deployable Azure services to MCSB controls. Used as the foundation for CI/CD security checks, security documentation, and compliance tracking.
-> **Last updated:** 2026-03-23
+> **Last updated:** 2026-03-24
 > **Source of truth:** [Microsoft Cloud Security Benchmark](https://learn.microsoft.com/en-us/security/benchmark/azure/)
 > **Checkov traceability audit:** See [../docs/checkov-coverage-audit.md](../docs/checkov-coverage-audit.md) for verified current Checkov coverage, broken references, and normalization priorities.
 
@@ -66,14 +66,16 @@ Cross-cutting security domains such as DevOps Security, Endpoint Security, and A
 
 ## 1. Azure Storage Account
 
+> 🏆 Gold-tier | [controls.md](azure-storage/controls.md) | SAST: automated via `azure-openai-tf-check.yml`
+
 | Control ID | MCSB | Domain | Control Name | Applies | Severity | Priority | IaC Checkable | Validation |
 |---|---|---|---|---|---|---|---|---|
-| ST-001 | NS-1 | NS | Public blob access disabled | Yes | High | Must | Yes | `CKV_AZURE_59` |
-| ST-002 | DP-3 | DP | HTTPS only (secure transfer) | Yes | High | Must | Yes | `CKV_AZURE_3` |
-| ST-003 | DP-3 | DP | Minimum TLS 1.2 | Yes | High | Must | Yes | `CKV_AZURE_44` |
+| ST-001 | NS-1 | NS | Public blob access disabled | Yes | High | Must | Yes | `CKV_AZURE_59` · `tfsec:azure-storage-no-public-access` |
+| ST-002 | DP-3 | DP | HTTPS only (secure transfer) | Yes | High | Must | Yes | `CKV_AZURE_3` · `tfsec:azure-storage-enforce-https` |
+| ST-003 | DP-3 | DP | Minimum TLS 1.2 | Yes | High | Must | Yes | `CKV_AZURE_44` · `tfsec:azure-storage-use-secure-tls-policy` |
 | ST-004 | DP-4 | DP | Infrastructure encryption | Yes | Medium | Should | Yes | `CKV_AZURE_256` |
 | ST-005 | DP-5 | DP | Customer-managed keys (CMK) | Conditional | Medium | Should | Partial | `CKV_AZURE_206` |
-| ST-006 | NS-2 | NS | Network firewall default deny | Yes | High | Must | Yes | `CKV_AZURE_35` |
+| ST-006 | NS-2 | NS | Network firewall default deny | Yes | High | Must | Yes | `CKV_AZURE_35` · `tfsec:azure-storage-default-action-deny` |
 | ST-007 | NS-2 | NS | Public network access disabled | Conditional | High | Must | Yes | `CKV_AZURE_190` |
 | ST-008 | LT-3 | LT | Diagnostic logging enabled | Yes | Medium | Must | Partial | Custom |
 | ST-009 | DP-8 | DP | Soft delete ≥ 7 days | Yes | Medium | Should | Yes | `CKV_AZURE_111` |
@@ -85,11 +87,13 @@ Cross-cutting security domains such as DevOps Security, Endpoint Security, and A
 
 ## 2. Azure Key Vault
 
+> 🏆 Gold-tier | [controls.md](azure-key-vault/controls.md) | SAST: automated via `azure-openai-tf-check.yml`
+
 | Control ID | MCSB | Domain | Control Name | Applies | Severity | Priority | IaC Checkable | Validation |
 |---|---|---|---|---|---|---|---|---|
-| KV-001 | NS-2 | NS | Public network access disabled | Yes | High | Must | Yes | `CKV_AZURE_109` |
+| KV-001 | NS-2 | NS | Public network access disabled | Yes | High | Must | Yes | `CKV_AZURE_109` · `tfsec:azure-keyvault-ensure-key-vault-is-not-publicly-accessible` |
 | KV-002 | NS-2 | NS | Private endpoint configured | Conditional | High | Must | Partial | `CKV_AZURE_109` + custom |
-| KV-003 | NS-1 | NS | Network default action deny | Yes | High | Must | Yes | `CKV_AZURE_109` |
+| KV-003 | NS-1 | NS | Network default action deny | Yes | High | Must | Yes | `CKV_AZURE_109` · `tfsec:azure-keyvault-specify-network-acl` |
 | KV-004 | LT-3 | LT | Diagnostic logging enabled | Yes | Medium | Must | Partial | Custom |
 | KV-005 | DP-7 | DP | Soft delete enabled | Yes | High | Must | Yes | `CKV_AZURE_42` |
 | KV-006 | DP-7 | DP | Purge protection enabled | Yes | High | Must | Yes | `CKV_AZURE_110` |
@@ -139,14 +143,16 @@ Cross-cutting security domains such as DevOps Security, Endpoint Security, and A
 
 ## 5. Azure Kubernetes Service (AKS)
 
+> 🏆 Gold-tier | [controls.md](azure-aks/controls.md) | SAST: automated via `azure-openai-tf-check.yml`
+
 | Control ID | MCSB | Domain | Control Name | Applies | Severity | Priority | IaC Checkable | Validation |
 |---|---|---|---|---|---|---|---|---|
-| AK-001 | NS-2 | NS | API server authorized IP ranges | Yes | High | Must | Yes | `CKV_AZURE_6` |
+| AK-001 | NS-2 | NS | API server authorized IP ranges | Yes | High | Must | Yes | `CKV_AZURE_6` · `tfsec:azure-container-service-api-server-authorized-ip-ranges` |
 | AK-002 | NS-2 | NS | Private cluster enabled | Conditional | High | Should | Yes | `CKV_AZURE_115` |
 | AK-003 | IM-1 | IM | Azure AD integration enabled | Yes | High | Must | Yes | `CKV_AZURE_5` |
 | AK-004 | IM-1 | IM | Local accounts disabled | Yes | High | Must | Yes | `CKV_AZURE_141` |
-| AK-005 | PA-7 | PA | RBAC enabled | Yes | High | Must | Yes | `CKV_AZURE_5` |
-| AK-006 | NS-1 | NS | Network policy enabled (Calico/Azure) | Yes | High | Must | Yes | `CKV_AZURE_7` |
+| AK-005 | PA-7 | PA | RBAC enabled | Yes | High | Must | Yes | `CKV_AZURE_5` · `tfsec:azure-container-service-cluster-rbac-enabled` |
+| AK-006 | NS-1 | NS | Network policy enabled (Calico/Azure) | Yes | High | Must | Yes | `CKV_AZURE_7` · `tfsec:azure-container-service-network-policy-enabled` |
 | AK-007 | PV-2 | PV | Auto-upgrade channel configured | Yes | Medium | Should | Yes | `CKV_AZURE_170` |
 | AK-008 | PV-5 | PV | Node OS auto-patching enabled | Yes | Medium | Should | Yes | `CKV_AZURE_141` |
 | AK-009 | LT-3 | LT | Diagnostic logging enabled | Yes | Medium | Must | Partial | Custom |
