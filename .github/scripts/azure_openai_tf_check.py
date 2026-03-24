@@ -217,6 +217,8 @@ def main():
         "> Gold-tier modules: Storage Account · Key Vault · AKS\n",
     ]
 
+    total_fails = 0
+
     if not modules_to_check:
         report_sections.append("_No gold-tier Terraform changes detected._\n")
     else:
@@ -268,8 +270,22 @@ def main():
                 print(f"   API error: {e}", file=sys.stderr)
                 continue
 
+            module_fails = sum(1 for f in findings if f["status"] == "FAIL")
+            total_fails += module_fails
+
             section = render_module_report(module_dir, tf_file, findings, controls_meta)
             report_sections.append(section)
+
+    # ── Gate banner ───────────────────────────────────────────────────────────
+    if modules_to_check:
+        if total_fails == 0:
+            gate_banner = "### ✅ Gate: PASSED — no unregistered FAIL findings\n"
+        else:
+            gate_banner = (
+                f"### ❌ Gate: BLOCKED — {total_fails} FAIL finding(s) must be "
+                f"remediated or registered as exceptions before merging\n"
+            )
+        report_sections.insert(2, gate_banner)
 
     full_report = "\n".join(report_sections)
 
@@ -278,6 +294,9 @@ def main():
 
     print(f"\nReport written to {args.output}")
     print(full_report)
+
+    if total_fails > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
