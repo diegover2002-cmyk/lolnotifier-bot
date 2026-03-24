@@ -1,6 +1,6 @@
 # Azure Key Vault — Security Controls
 
-> **MCSB Mapping** | **Severity:** 5 High / 5 Medium / 1 Low
+> **MCSB Mapping** | **Severity:** 6 High / 5 Medium / 0 Low
 > **Back to matrix:** [MCSB-control-matrix.md](../MCSB-control-matrix.md)
 
 ---
@@ -33,6 +33,7 @@
 | **Applies** | Yes — all Key Vaults |
 | **Justification** | Key Vault stores secrets, keys, and certificates. Public exposure creates a direct attack surface for credential theft even with authentication controls |
 | **Checkov** | `CKV_AZURE_109` |
+| **tfsec** | `azure-keyvault-ensure-key-vault-is-not-publicly-accessible` |
 
 ```hcl
 # Insecure
@@ -88,6 +89,7 @@ resource "azurerm_private_endpoint" "kv_pe" {
 | **Applies** | Yes — all Key Vaults |
 | **Justification** | Without `default_action = "Deny"`, the vault is reachable from any IP even if public access is nominally restricted |
 | **Checkov** | `CKV_AZURE_109` |
+| **tfsec** | `azure-keyvault-specify-network-acl` |
 
 ```hcl
 # Insecure
