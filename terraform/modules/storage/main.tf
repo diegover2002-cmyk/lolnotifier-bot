@@ -1,5 +1,6 @@
 # terraform/modules/storage/main.tf
 # Azure Storage Account with a File Share for SQLite database persistence.
+# PR TEST: trigger Azure OpenAI security check
 # The Container App mounts this share at /app/data.
 #
 # Note: SQLite over Azure File Share (SMB) works for single-instance bots.
