@@ -48,7 +48,7 @@ def main():
         "input": [
             {"role": "user", "content": prompt}
         ],
-        "max_output_tokens": 1024,
+        "max_output_tokens": 4096,
         "model": MODEL
     }
     response = requests.post(ENDPOINT, headers=headers, data=json.dumps(data))
