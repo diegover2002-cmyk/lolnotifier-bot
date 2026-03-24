@@ -1,0 +1,43 @@
+name: Azure OpenAI Terraform Security Check
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/modules/storage/main.tf'
+
+jobs:
+  tf-security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Azure OpenAI Security Check
+        env:
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+        run: |
+          python .github/scripts/azure_openai_tf_check.py \
+            terraform/modules/storage/main.tf \
+            controls/azure-storage/controls.md \
+            security_check_output.txt
+
+      - name: Post result as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('security_check_output.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### :lock: Azure OpenAI Security Check Result\n\n${output}`.slice(0, 65000) // GitHub comment limit
+            });

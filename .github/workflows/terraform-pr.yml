@@ -9,13 +9,7 @@
 
 name: Terraform PR
 
-on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "terraform/**"
-      - ".github/workflows/terraform-pr.yml"
-      - ".github/workflows/terraform.yml"
+
 
 permissions:
   contents: read
