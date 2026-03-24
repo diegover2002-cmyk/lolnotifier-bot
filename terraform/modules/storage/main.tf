@@ -1,7 +1,7 @@
 # terraform/modules/storage/main.tf
 # Azure Storage Account with a File Share for SQLite database persistence.
 # The Container App mounts this share at /app/data.
-#
+#TEST
 # Note: SQLite over Azure File Share (SMB) works for single-instance bots.
 # For multi-instance or high-throughput, migrate to Azure SQL or Cosmos DB.
 
