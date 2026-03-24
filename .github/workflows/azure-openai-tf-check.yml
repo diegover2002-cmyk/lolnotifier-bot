@@ -1,38 +1,60 @@
-name: Azure OpenAI Terraform Security Check
+name: Terraform SAST — AI Security Check
 
 permissions:
   contents: read
-  issues: write
   pull-requests: write
 
 on:
   pull_request:
     paths:
-      - 'terraform/modules/storage/main.tf'
+      - 'terraform/modules/storage/**'
+      - 'terraform/modules/keyvault/**'
+      - 'terraform/modules/aks/**'
 
 jobs:
   tf-security-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed gold-tier terraform files
+        id: changed
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- 'terraform/modules/storage/**' \
+               'terraform/modules/keyvault/**' \
+               'terraform/modules/aks/**' \
+            | tr '\n' ' ' | xargs)
+          echo "files=${FILES}" >> $GITHUB_OUTPUT
+          echo "Changed gold-tier files: '${FILES}'"
 
       - name: Set up Python
+        if: steps.changed.outputs.files != ''
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
+        if: steps.changed.outputs.files != ''
         run: pip install requests
 
-      - name: Run Azure OpenAI Security Check
+      - name: Run AI Security Check
+        if: steps.changed.outputs.files != ''
         env:
           AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
         run: |
           python .github/scripts/azure_openai_tf_check.py \
-            terraform/modules/storage/main.tf \
-            controls/azure-storage/controls.md \
-            security_check_output.txt
+            --changed-files ${{ steps.changed.outputs.files }} \
+            --output security_check_output.txt
+
+      - name: No gold-tier changes detected
+        if: steps.changed.outputs.files == ''
+        run: |
+          echo "No gold-tier Terraform changes detected — skipping AI check." \
+            > security_check_output.txt
 
       - name: Post result as PR comment
         uses: actions/github-script@v7
@@ -44,5 +66,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### :lock: Azure OpenAI Security Check Result\n\n${output}`.slice(0, 65000) // GitHub comment limit
+              body: output.slice(0, 65000)
             });
