@@ -1,5 +1,10 @@
 name: Azure OpenAI Terraform Security Check
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 on:
   pull_request:
     paths:
