@@ -1,0 +1,132 @@
+{
+  "_schema": "1.0",
+  "_description": "MCSB control to Azure built-in Policy mapping. Source: Microsoft Cloud Security Benchmark built-in initiative (1f3afdf9-d0c9-4c3d-847f-89da613e70a8). Custom policies from the policies TF repo should be added under custom_policies with mcsb_controls metadata.",
+  "_updated": "2026-03-25",
+  "_refresh": "Scheduled weekly via GitHub Action (see .github/workflows/refresh-policy-mapping.yml — PRPRO-0003)",
+  "controls": {
+    "ST-001": {
+      "mcsb": "NS-1",
+      "title": "Public blob access disabled",
+      "builtin_policies": [
+        {
+          "id": "4fa4b6c0-31ca-4c0d-b10d-24b96f62a751",
+          "display_name": "Storage account public access should be disallowed",
+          "effect": "audit/deny",
+          "defender_recommendation": "Storage accounts should restrict public access"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-002": {
+      "mcsb": "DP-3",
+      "title": "HTTPS only (secure transfer)",
+      "builtin_policies": [
+        {
+          "id": "404c3081-a854-4457-ae30-26a93ef643f9",
+          "display_name": "Secure transfer to storage accounts should be enabled",
+          "effect": "audit/deny",
+          "defender_recommendation": "Secure transfer to storage accounts should be enabled"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-003": {
+      "mcsb": "DP-3",
+      "title": "Minimum TLS version 1.2",
+      "builtin_policies": [
+        {
+          "id": "fe83a0eb-a853-422d-aac2-1bffd182c5d0",
+          "display_name": "Storage accounts should have the minimum TLS version of TLS1_2",
+          "effect": "audit/deny",
+          "defender_recommendation": "Storage accounts should have infrastructure encryption"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-004": {
+      "mcsb": "DP-4",
+      "title": "Infrastructure encryption (double encryption)",
+      "builtin_policies": [
+        {
+          "id": "4733ea7b-a883-42fe-8cac-97454c2a9e4a",
+          "display_name": "Storage accounts should have infrastructure encryption",
+          "effect": "audit/deny",
+          "defender_recommendation": null
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-006": {
+      "mcsb": "NS-2",
+      "title": "Network firewall default deny",
+      "builtin_policies": [
+        {
+          "id": "34c877ad-507e-4c82-993e-3452a6e0ad3c",
+          "display_name": "Storage accounts should restrict network access",
+          "effect": "audit/deny",
+          "defender_recommendation": "Storage accounts should restrict network access using virtual network rules"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-007": {
+      "mcsb": "NS-2",
+      "title": "Public network access disabled",
+      "builtin_policies": [
+        {
+          "id": "b2982f36-99f2-4db5-8eff-19bf0dceab07",
+          "display_name": "Storage accounts should disable public network access",
+          "effect": "audit/deny",
+          "defender_recommendation": "Storage accounts should disable public network access"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-008": {
+      "mcsb": "LT-3",
+      "title": "Diagnostic logging enabled",
+      "builtin_policies": [
+        {
+          "id": "6f8f98a4-f108-47cb-8e98-91a0d85cd474",
+          "display_name": "Storage accounts should have resource logs enabled",
+          "effect": "auditIfNotExists/deployIfNotExists",
+          "defender_recommendation": "Resource logs in Storage Accounts should be enabled"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-011": {
+      "mcsb": "IM-1",
+      "title": "Shared key access disabled",
+      "builtin_policies": [
+        {
+          "id": "8c6a50c6-9ffd-4ae7-986f-5fa6111f9a54",
+          "display_name": "Storage accounts should prevent shared key access",
+          "effect": "audit/deny",
+          "defender_recommendation": "Storage accounts should prevent shared key access"
+        }
+      ],
+      "custom_policies": []
+    },
+    "ST-012": {
+      "mcsb": "NS-1",
+      "title": "Cross-tenant replication disabled",
+      "builtin_policies": [
+        {
+          "id": "92a89a79-6498-4b86-ab96-c4b427af4b50",
+          "display_name": "Storage accounts should prevent cross tenant object replication",
+          "effect": "audit/deny",
+          "defender_recommendation": null
+        }
+      ],
+      "custom_policies": []
+    }
+  },
+  "_notes": {
+    "custom_policy_integration": "To link custom policies from the policies TF repo, add entries to custom_policies array with: {id, display_name, mcsb_controls}. The policies TF resource should include metadata.mcsb_controls to enable automated extraction.",
+    "coverage_gaps": [
+      "ST-005 (CMK) has no direct built-in audit policy for storage; enforced via Defender for Cloud recommendation 'Storage accounts should use customer-managed key for encryption'",
+      "ST-009 (soft delete) and ST-010 (versioning) are not covered by MCSB built-in initiative policies; rely on Checkov rules CKV_AZURE_111 and CKV_AZURE_119"
+    ]
+  }
+}

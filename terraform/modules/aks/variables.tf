@@ -16,13 +16,13 @@ variable "vm_size" {
   default = "Standard_D4s_v3"
 }
 
-# AK-001 — restrict API server to known CIDRs
+# AK-001 — Must: restrict API server to known CIDRs
 variable "api_server_authorized_ip_ranges" {
   description = "List of CIDRs allowed to reach the Kubernetes API server (AK-001)"
   type        = list(string)
 }
 
-# AK-003 / AK-005 — Azure AD group whose members get cluster-admin
+# AK-003/AK-005 — Azure AD group whose members get cluster-admin
 variable "aks_admin_group_ids" {
   description = "Azure AD group object IDs granted cluster-admin RBAC role (AK-003)"
   type        = list(string)
@@ -30,6 +30,6 @@ variable "aks_admin_group_ids" {
 
 # AK-011 — CMK disk encryption set
 variable "disk_encryption_set_id" {
-  description = "Resource ID of the DiskEncryptionSet for CMK node disk encryption (AK-011)"
+  description = "Resource ID of the DiskEncryptionSet used for CMK node disk encryption (AK-011)"
   type        = string
 }

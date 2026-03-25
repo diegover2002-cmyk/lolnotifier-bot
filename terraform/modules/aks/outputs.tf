@@ -11,7 +11,7 @@ output "cluster_name" {
 }
 
 output "kubelet_identity_object_id" {
-  description = "Object ID of the kubelet managed identity — for ACR pull and Key Vault access"
+  description = "Object ID of the kubelet managed identity — used for ACR pull and Key Vault access"
   value       = azurerm_kubernetes_cluster.main.kubelet_identity[0].object_id
 }
 
