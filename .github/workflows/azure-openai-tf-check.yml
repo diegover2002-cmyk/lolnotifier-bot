@@ -1,4 +1,4 @@
-name: Terraform SAST — AI Security Check
+name: Terraform SAST — Security Check
 
 permissions:
   contents: read
@@ -12,15 +12,57 @@ on:
       - 'terraform/modules/aks/**'
 
 jobs:
-  tf-security-check:
+  security:
+    name: 🔒 Terraform Security Check
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Detect changed gold-tier terraform files
+      # ── Layer 0: Checkov IaC scan (full terraform/) ────────────────────────────
+      - name: Install Checkov
+        run: pip install checkov --quiet
+
+      - name: Run Checkov
+        run: |
+          checkov -d terraform/ \
+            --framework terraform \
+            --output json \
+            --output-file-path . \
+            --soft-fail \
+          || true
+
+      - name: Parse Checkov results
+        id: checkov
+        run: |
+          python3 - <<'EOF'
+          import json, os, glob
+
+          candidates = glob.glob("results_terraform.json") + glob.glob("results_*.json")
+          passed = failed = skipped = 0
+          try:
+              path = candidates[0]
+              with open(path) as f:
+                  data = json.load(f)
+              if isinstance(data, list):
+                  data = data[0]
+              s = data.get("summary", {})
+              passed  = s.get("passed",  0)
+              failed  = s.get("failed",  0)
+              skipped = s.get("skipped", 0)
+          except Exception as e:
+              print(f"[checkov-parse] {e}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"passed={passed}\nfailed={failed}\nskipped={skipped}\n")
+          print(f"Checkov: {passed} passed / {failed} failed / {skipped} skipped")
+          EOF
+
+      # ── Detect gold-tier changes ───────────────────────────────────────────────
+      - name: Detect gold-tier Terraform changes
         id: changed
         run: |
           FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
@@ -31,7 +73,7 @@ jobs:
           echo "files=${FILES}" >> $GITHUB_OUTPUT
           echo "Changed gold-tier files: '${FILES}'"
 
-      # ── Layer 1: tfsec static scan ─────────────────────────────────────────
+      # ── Layer 1: tfsec static scan (gold-tier only) ───────────────────────────
       - name: Install tfsec
         if: steps.changed.outputs.files != ''
         run: |
@@ -40,7 +82,6 @@ jobs:
 
       - name: Run tfsec on gold-tier modules
         if: steps.changed.outputs.files != ''
-        id: tfsec
         run: |
           tfsec terraform/modules/ \
             --include-passed \
@@ -49,14 +90,14 @@ jobs:
             --soft-fail
         continue-on-error: true
 
-      # ── Layer 2: AI semantic scan + exception gate ─────────────────────────
+      # ── Layer 2: AI semantic scan + exception gate ─────────────────────────────
       - name: Set up Python
         if: steps.changed.outputs.files != ''
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         if: steps.changed.outputs.files != ''
         run: pip install requests
 
@@ -64,30 +105,131 @@ jobs:
         id: sast
         if: steps.changed.outputs.files != ''
         env:
-          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+          AZURE_API_KEY:   ${{ secrets.AZURE_API_KEY }}
+          CHECKOV_PASSED:  ${{ steps.checkov.outputs.passed }}
+          CHECKOV_FAILED:  ${{ steps.checkov.outputs.failed }}
+          CHECKOV_SKIPPED: ${{ steps.checkov.outputs.skipped }}
+          PR_NUMBER:       ${{ github.event.pull_request.number }}
+          PR_BRANCH:       ${{ github.head_ref }}
+          RUN_NUMBER:      ${{ github.run_number }}
+          RUN_ID:          ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           python .github/scripts/azure_openai_tf_check.py \
             --changed-files ${{ steps.changed.outputs.files }} \
             --tfsec-output tfsec-output.json \
             --output security_check_output.txt
+        continue-on-error: true
 
       - name: No gold-tier changes detected
         if: steps.changed.outputs.files == ''
+        env:
+          CHECKOV_PASSED:  ${{ steps.checkov.outputs.passed }}
+          CHECKOV_FAILED:  ${{ steps.checkov.outputs.failed }}
+          CHECKOV_SKIPPED: ${{ steps.checkov.outputs.skipped }}
+          PR_NUMBER:       ${{ github.event.pull_request.number }}
+          PR_BRANCH:       ${{ github.head_ref }}
+          RUN_NUMBER:      ${{ github.run_number }}
+          RUN_ID:          ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          echo "No gold-tier Terraform changes detected — skipping AI check." \
-            > security_check_output.txt
+          python3 - <<'PYEOF'
+          import os
+          from datetime import datetime, timezone
 
-      # ── Post unified report as PR comment ──────────────────────────────────
-      - name: Post result as PR comment
+          ck_p = int(os.getenv("CHECKOV_PASSED",  "0"))
+          ck_f = int(os.getenv("CHECKOV_FAILED",  "0"))
+          ck_s = int(os.getenv("CHECKOV_SKIPPED", "0"))
+          ck_total = ck_p + ck_f + ck_s
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+          pr   = os.getenv("PR_NUMBER", "?")
+          branch = os.getenv("PR_BRANCH", "?")
+          run  = os.getenv("RUN_NUMBER", "?")
+          run_id = os.getenv("RUN_ID", "")
+          repo = os.getenv("GITHUB_REPOSITORY", "")
+
+          ck_line = "✅ No failed checks — all IaC controls passed." if ck_f == 0 \
+                    else f"⚠️ {ck_f} failed check(s) detected by Checkov."
+          gate = "✅ **Gate: PASSED**" if ck_f == 0 \
+                 else "⚠️ **Gate: WARNING** — Checkov IaC findings"
+          run_link = f"[#{run}](https://github.com/{repo}/actions/runs/{run_id})" if repo else f"#{run}"
+
+          report = f"""## 🔒 Terraform Security Report — {gate}
+
+          > PR **#{pr}** · Branch `{branch}` · Run {run_link} · {now}
+
+          ---
+
+          ### 📋 Checkov IaC Scan
+
+          | ✅ Passed | ❌ Failed | ⏭️ Skipped | Total |
+          |---|---|---|---|
+          | {ck_p} | {ck_f} | {ck_s} | {ck_total} |
+
+          {ck_line}
+
+          ---
+
+          ## 🔒 Terraform SAST — AI Security Check
+
+          > Gold-tier modules: Storage Account · Key Vault · AKS
+
+          ℹ️ No gold-tier Terraform changes detected in this PR — AI check skipped.
+          """
+          with open("security_check_output.txt", "w") as f:
+              f.write(report)
+          PYEOF
+
+      # ── Enforce security gate ──────────────────────────────────────────────────
+      - name: Enforce security gate
+        run: |
+          if [ "${{ steps.sast.outcome }}" = "failure" ]; then
+            echo "❌ Security gate blocked: unregistered FAIL findings detected."
+            exit 1
+          fi
+          echo "✅ Security gate passed."
+
+      # ── Post unified report as PR comment (update-or-create) ──────────────────
+      - name: Post unified security report
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const output = fs.readFileSync('security_check_output.txt', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            let output = '';
+            try {
+              output = fs.readFileSync('security_check_output.txt', 'utf8');
+            } catch (e) {
+              output = '⚠️ Security report file not found — check workflow logs.';
+            }
+
+            const SIGNATURE = '🔒 Terraform Security Report';
+            const body = output.slice(0, 65000);
+
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output.slice(0, 65000)
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
             });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes(SIGNATURE)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log(`Updated existing comment #${existing.id}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner:        context.repo.owner,
+                repo:         context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              console.log('Created new comment');
+            }
