@@ -192,7 +192,7 @@ jobs:
       # ── Post unified report as PR comment (update-or-create) ──────────────────
       - name: Post unified security report
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
