@@ -1,5 +1,5 @@
 # Runtime
-aiohttp==3.13.3
+aiohttp==3.13.5
 aiosqlite==0.22.1
 python-dotenv==1.2.2
 tenacity==9.1.4
