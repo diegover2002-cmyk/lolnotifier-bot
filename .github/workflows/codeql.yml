@@ -63,7 +63,7 @@ jobs:
 
       - name: Post CodeQL comment to PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           CODEQL_STATUS: ${{ steps.result.outputs.status }}
           CODEQL_DETAIL: ${{ steps.result.outputs.detail }}
